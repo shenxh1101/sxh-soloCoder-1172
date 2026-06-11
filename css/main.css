@@ -1994,3 +1994,409 @@ body {
 .knowledge-card__notes-textarea::placeholder {
   color: var(--text-muted);
 }
+
+/* ============ LEARNING PATH ROADMAP ============ */
+.learning-path {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.learning-path__group {
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-panel);
+}
+
+.learning-path__group-header {
+  padding: 16px 20px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.learning-path__group-info {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.learning-path__group-name {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.learning-path__group-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.learning-path__group-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.learning-path__progress-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-input);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.learning-path__progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.learning-path__progress-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.learning-path__nodes {
+  padding: 8px 0;
+}
+
+.lp-node {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 20px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all var(--transition-normal);
+  position: relative;
+}
+
+.lp-node:hover {
+  background: var(--bg-hover);
+  border-left-color: var(--accent-blue);
+}
+
+.lp-node--completed {
+  opacity: 0.85;
+}
+
+.lp-node--next {
+  border-left-color: var(--accent-green);
+  background: rgba(46, 213, 115, 0.04);
+}
+
+.lp-node__step {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--bg-input);
+  border: 2px solid var(--border-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: all var(--transition-normal);
+}
+
+.lp-node--completed .lp-node__step {
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+  color: var(--bg-primary);
+}
+
+.lp-node--next .lp-node__step {
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+  box-shadow: 0 0 8px rgba(46, 213, 115, 0.3);
+}
+
+.lp-node__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.lp-node__title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.lp-node--completed .lp-node__title {
+  color: var(--text-secondary);
+}
+
+.lp-node__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  margin-bottom: 3px;
+}
+
+.lp-node__knowledge {
+  font-size: 0.73rem;
+  color: var(--text-muted);
+}
+
+.lp-node__mastery {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.lp-node__next {
+  padding: 2px 8px;
+  background: rgba(46, 213, 115, 0.15);
+  color: var(--accent-green);
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.lp-node__locked {
+  padding: 2px 8px;
+  background: rgba(106, 106, 128, 0.08);
+  color: var(--text-muted);
+  border-radius: 10px;
+  font-size: 0.7rem;
+}
+
+/* ============ WRONG BOOK FILTERS ============ */
+.wrong-book__filters {
+  display: flex;
+  gap: 16px;
+  padding: 12px 20px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.filter-select {
+  padding: 6px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-family: var(--font-ui);
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--transition-normal);
+}
+
+.filter-select:focus {
+  border-color: var(--accent-blue);
+}
+
+/* ============ REVIEW TODAY ============ */
+.wrong-book__review-today {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-primary);
+  background: rgba(254, 180, 20, 0.04);
+  display: none;
+}
+
+.review-today__title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent-amber);
+  margin-bottom: 10px;
+}
+
+.review-today__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.review-today__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.review-today__item:hover {
+  border-color: var(--accent-amber);
+  box-shadow: 0 0 8px rgba(254, 180, 20, 0.1);
+}
+
+.review-today__item-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.review-today__item-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* ============ MASTERY LOG ============ */
+.mastery-log-mini {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.mastery-log-entry {
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+}
+
+.mastery-delta--up {
+  background: rgba(46, 213, 115, 0.1);
+  color: var(--accent-green);
+}
+
+.mastery-delta--down {
+  background: rgba(255, 71, 87, 0.1);
+  color: var(--accent-red);
+}
+
+/* ============ MASTERY HISTORY (KNOWLEDGE CARD) ============ */
+.knowledge-card__mastery {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-primary);
+}
+
+.mastery-history-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 0.78rem;
+  border-bottom: 1px solid rgba(106, 106, 128, 0.08);
+}
+
+.mastery-history-entry:last-child {
+  border-bottom: none;
+}
+
+.mastery-history__reason {
+  font-weight: 500;
+  color: var(--text-secondary);
+  min-width: 48px;
+}
+
+.mastery-history__change {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  min-width: 36px;
+}
+
+.mastery-history__value {
+  font-family: var(--font-mono);
+  font-size: 0.73rem;
+  color: var(--text-muted);
+}
+
+.mastery-history__time {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* ============ FAVORITES ============ */
+.modal--favorites {
+  max-width: 560px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.favorites-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.favorite-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.favorite-card:hover {
+  border-color: var(--accent-purple);
+  background: var(--bg-hover);
+}
+
+.favorite-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.favorite-card__title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.favorite-card__summary {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.favorite-card__note {
+  font-size: 0.73rem;
+  color: var(--accent-amber);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============ WRONG BOOK CARD SECTION ============ */
+.wrong-book-card__section-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}

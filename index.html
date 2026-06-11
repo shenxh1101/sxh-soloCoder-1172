@@ -59,13 +59,15 @@
           </div>
         </div>
 
-        <div class="level-grid" id="levelGrid">
-        </div>
+        <div class="learning-path" id="learningPath"></div>
 
         <div class="level-select__footer">
           <button class="btn btn--outline btn--glow" id="btnCustomLevel">
             <span class="btn__icon">&#43;</span>
             创建自定义关卡
+          </button>
+          <button class="btn btn--outline" id="btnFavorites">
+            <span class="btn__icon">&#9733;</span> 我的收藏
           </button>
           <button class="btn btn--outline" id="btnWrongBook">
             <span class="btn__icon">&#128450;</span> 错题本
@@ -320,6 +322,32 @@
           <div class="wrong-book__placeholder"></div>
         </div>
 
+        <div class="wrong-book__filters">
+          <div class="filter-group">
+            <label class="filter-label">掌握度</label>
+            <select class="filter-select" id="filterMastery">
+              <option value="">全部</option>
+              <option value="low">生疏 (< 30)</option>
+              <option value="medium">掌握中 (30-60)</option>
+              <option value="high">已掌握 (60-85)</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">排序</label>
+            <select class="filter-select" id="sortWrongBook">
+              <option value="last-desc">最近错在前</option>
+              <option value="mastery-asc">掌握度低在前</option>
+              <option value="mastery-desc">掌握度高在前</option>
+              <option name="wrong-count">答错次数多在前</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="wrong-book__review-today" id="reviewTodaySection">
+          <h4 class="review-today__title">📅 今日建议复习</h4>
+          <div class="review-today__list" id="reviewTodayList"></div>
+        </div>
+
         <div class="wrong-book__content" id="wrongBookContent"></div>
       </div>
     </main>
@@ -382,6 +410,21 @@
             <label class="knowledge-card__notes-label">我的笔记</label>
             <textarea class="knowledge-card__notes-textarea" id="knowledgeNoteTextarea" placeholder="在这里记录你的理解、易错点、学习心得..."></textarea>
           </div>
+          <div class="knowledge-card__mastery dark" id="knowledgeMasteryHistory">
+            <label class="knowledge-card__notes-label">掌握度变化</label>
+            <div class="mastery-history" id="masteryHistoryContent"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ FAVORITES OVERLAY ============ -->
+    <div class="overlay hidden" id="favoritesOverlay">
+      <div class="modal modal--favorites">
+        <button class="modal__close" id="closeFavorites">&times;</button>
+        <h3 class="modal__title">&#9733; 我的收藏</h3>
+        <div class="favorites-content" id="favoritesContent">
+          <div class="review-empty">暂无收藏的知识卡片</div>
         </div>
       </div>
     </div>

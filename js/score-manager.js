@@ -26,6 +26,7 @@ class ScoreManager {
         this.wrongRecords = parsed.wrongRecords || {};
         this.levelMeta = parsed.levelMeta || {};
         this.lastAttemptTimes = parsed.lastAttemptTimes || {};
+        this.masteryLog = parsed.masteryLog || [];
       } else {
         this.reset();
       }
@@ -60,7 +61,8 @@ class ScoreManager {
       livesLostPerLevel: this.livesLostPerLevel,
       wrongRecords: this.wrongRecords,
       levelMeta: this.levelMeta,
-      lastAttemptTimes: this.lastAttemptTimes
+      lastAttemptTimes: this.lastAttemptTimes,
+      masteryLog: this.masteryLog
     };
     localStorage.setItem('syntax_game_progress', JSON.stringify(data));
   }
@@ -85,6 +87,7 @@ class ScoreManager {
     this.wrongRecords = {};
     this.levelMeta = {};
     this.lastAttemptTimes = {};
+    this.masteryLog = [];
     this.notes = {};
     this.favorites = [];
     this.save();
@@ -116,7 +119,14 @@ class ScoreManager {
   }
 
   markHintUsed(levelId) {
-    this.hintsUsedForLevel[levelId] = true;
+    if (this.isLevelCompleted(levelId)) {
+      const before = this.calculateMastery(levelId);
+      this.hintsUsedForLevel[levelId] = true;
+      const after = this.calculateMastery(levelId);
+      this.logMasteryChange(levelId, '使用提示', after - before, before, after);
+    } else {
+      this.hintsUsedForLevel[levelId] = true;
+    }
     this.save();
   }
 
@@ -199,11 +209,75 @@ class ScoreManager {
     if (!this.isLevelCompleted(levelId)) {
       return;
     }
-    const current = this.calculateMastery(levelId);
-    const updated = Math.min(100, current + this.MASTERY_REDO_BONUS);
+    const before = this.calculateMastery(levelId);
+    this.wrongAttempts[levelId] = 0;
+    this.hintsUsedForLevel[levelId] = false;
     this.recordLastAttempt(levelId);
+    const after = this.calculateMastery(levelId);
+    this.logMasteryChange(levelId, '重做通关', after - before, before, after);
     this.save();
-    return updated;
+    return after;
+  }
+
+  logMasteryChange(levelId, reason, delta, before, after) {
+    this.masteryLog.push({
+      levelId,
+      reason,
+      delta,
+      before,
+      after,
+      timestamp: Date.now()
+    });
+    if (this.masteryLog.length > 500) {
+      this.masteryLog = this.masteryLog.slice(-300);
+    }
+    this.save();
+  }
+
+  getMasteryLog(levelId) {
+    return this.masteryLog.filter(e => e.levelId === levelId).sort((a, b) => b.timestamp - a.timestamp);
+  }
+
+  getWrongBookDataFiltered(filters) {
+    const allEntries = this.getWrongBookData();
+    if (!filters) return allEntries;
+
+    let result = [...allEntries];
+
+    if (filters.mastery) {
+      result = result.filter(e => {
+        if (filters.mastery === 'low') return e.mastery < 30;
+        if (filters.mastery === 'medium') return e.mastery >= 30 && e.mastery < 60;
+        if (filters.mastery === 'high') return e.mastery >= 60 && e.mastery < 85;
+        return true;
+      });
+    }
+
+    if (filters.sort) {
+      if (filters.sort === 'last-desc') {
+        result.sort((a, b) => b.lastWrongTime - a.lastWrongTime);
+      } else if (filters.sort === 'mastery-asc') {
+        result.sort((a, b) => a.mastery - b.mastery);
+      } else if (filters.sort === 'mastery-desc') {
+        result.sort((a, b) => b.mastery - a.mastery);
+      } else if (filters.sort === 'wrong-count') {
+        result.sort((a, b) => b.wrongCount - a.wrongCount);
+      }
+    }
+
+    return result;
+  }
+
+  getTodayReviewPlan() {
+    const allEntries = this.getWrongBookData();
+    const today = Date.now();
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+
+    return allEntries.filter(e => {
+      const mastery = e.mastery;
+      const daysSince = (today - e.lastWrongTime) / (1000 * 60 * 60 * 24);
+      return mastery < 50 || daysSince > 7;
+    }).sort((a, b) => a.mastery - b.mastery).slice(0, 5);
   }
 
   setKnowledgeNote(cardId, note) {
@@ -235,12 +309,24 @@ class ScoreManager {
   }
 
   recordWrongAnswer(levelId, errorType) {
-    this.wrongAttempts[levelId] = (this.wrongAttempts[levelId] || 0) + 1;
-    if (errorType) {
-      this.errorTypesEncountered[errorType] = (this.errorTypesEncountered[errorType] || 0) + 1;
+    if (this.isLevelCompleted(levelId)) {
+      const before = this.calculateMastery(levelId);
+      this.wrongAttempts[levelId] = (this.wrongAttempts[levelId] || 0) + 1;
+      if (errorType) {
+        this.errorTypesEncountered[errorType] = (this.errorTypesEncountered[errorType] || 0) + 1;
+      }
+      const prevLost = this.livesLostPerLevel[levelId] || 0;
+      this.livesLostPerLevel[levelId] = prevLost + 1;
+      const after = this.calculateMastery(levelId);
+      this.logMasteryChange(levelId, '答错', after - before, before, after);
+    } else {
+      this.wrongAttempts[levelId] = (this.wrongAttempts[levelId] || 0) + 1;
+      if (errorType) {
+        this.errorTypesEncountered[errorType] = (this.errorTypesEncountered[errorType] || 0) + 1;
+      }
+      const prevLost = this.livesLostPerLevel[levelId] || 0;
+      this.livesLostPerLevel[levelId] = prevLost + 1;
     }
-    const prevLost = this.livesLostPerLevel[levelId] || 0;
-    this.livesLostPerLevel[levelId] = prevLost + 1;
     this.save();
   }
 

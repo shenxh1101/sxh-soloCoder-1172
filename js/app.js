@@ -45,6 +45,10 @@ class App {
       this.navigateTo('custom-level');
     });
 
+    document.getElementById('btnFavorites').addEventListener('click', () => {
+      this.openFavorites();
+    });
+
     document.getElementById('btnReviewPage').addEventListener('click', () => {
       this.navigateTo('review');
     });
@@ -124,6 +128,28 @@ class App {
     document.getElementById('validateOverlay').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) {
         document.getElementById('validateOverlay').classList.add('hidden');
+      }
+    });
+
+    document.getElementById('closeFavorites').addEventListener('click', () => {
+      document.getElementById('favoritesOverlay').classList.add('hidden');
+    });
+
+    document.getElementById('favoritesOverlay').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        document.getElementById('favoritesOverlay').classList.add('hidden');
+      }
+    });
+
+    document.getElementById('filterMastery').addEventListener('change', () => {
+      if (this.currentPage === 'wrong-book') {
+        this.renderWrongBook();
+      }
+    });
+
+    document.getElementById('sortWrongBook').addEventListener('change', () => {
+      if (this.currentPage === 'wrong-book') {
+        this.renderWrongBook();
       }
     });
   }
@@ -220,7 +246,7 @@ class App {
   }
 
   renderLevelSelect() {
-    const grid = document.getElementById('levelGrid');
+    const path = document.getElementById('learningPath');
     const allLevels = [...LEVELS, ...this.customLevels];
     const stats = scoreManager.getStats();
 
@@ -228,39 +254,87 @@ class App {
     document.getElementById('totalLevelCount').textContent = allLevels.length;
 
     let html = '';
-    allLevels.forEach((level, index) => {
-      const isCompleted = scoreManager.isLevelCompleted(level.id);
-      const isBuiltIn = level.id <= 100;
-      const stars = this.renderStars(level.difficulty);
-      const langLabel = level.language === 'python' ? 'Python' : 'JavaScript';
-      const langClass = level.language === 'python' ? 'lang-python' : 'lang-javascript';
-      const statusClass = isCompleted ? 'completed' : '';
-      const customBadge = !isBuiltIn ? '<span class="level-badge level-badge--custom">\u81EA\u5B9A\u4E49</span>' : '';
 
-      html += `
-        <div class="level-card ${statusClass}" data-level-id="${level.id}">
-          <div class="level-card__number">#${index + 1}</div>
-          <div class="level-card__title">${this.escapeHtml(level.title)}</div>
-          <div class="level-card__meta">
-            <span class="level-card__lang ${langClass}">${langLabel}</span>
-            <span class="level-card__stars">${stars}</span>
+    for (const catDef of LEVEL_CATEGORIES) {
+      let levels;
+      if (catDef.id === 'custom') {
+        levels = this.customLevels;
+      } else {
+        levels = LEVELS.filter(l => CATEGORY_MAP[l.id] === catDef.id);
+      }
+      if (levels.length === 0) continue;
+
+      const completed = levels.filter(l => scoreManager.isLevelCompleted(l.id)).length;
+      const total = levels.length;
+      const progress = Math.round((completed / total) * 100);
+
+      let nextLevel = null;
+      for (const l of levels) {
+        if (!scoreManager.isLevelCompleted(l.id)) {
+          nextLevel = l;
+          break;
+        }
+      }
+
+      html += `<div class="learning-path__group">
+        <div class="learning-path__group-header">
+          <div class="learning-path__group-info">
+            <span class="learning-path__group-name">${catDef.name}</span>
+            <span class="learning-path__group-desc">${catDef.description}</span>
           </div>
-          <div class="level-card__knowledge">${this.escapeHtml(level.knowledgePoint)}</div>
-          <div class="level-card__footer">
-            ${customBadge}
-            <span class="level-card__status">
-              ${isCompleted ? '\u2705 \u5DF2\u901A\u5173' : ''}
-            </span>
+          <div class="learning-path__group-progress">
+            <div class="learning-path__progress-bar">
+              <div class="learning-path__progress-fill" style="width:${progress}%"></div>
+            </div>
+            <span class="learning-path__progress-text">${completed}/${total} 关卡 · ${progress}%</span>
           </div>
         </div>
-      `;
-    });
+        <div class="learning-path__nodes">`;
 
-    grid.innerHTML = html;
+      levels.forEach((level, idx) => {
+        const isCompleted = scoreManager.isLevelCompleted(level.id);
+        const isNext = nextLevel && level.id === nextLevel.id;
+        const isBuiltIn = level.id <= 100;
+        const mastery = isCompleted ? scoreManager.calculateMastery(level.id) : 0;
+        const mClass = scoreManager.getMasteryColorClass(mastery);
+        const mText = scoreManager.getMasteryLevelText(mastery);
+        const langLabel = level.language === 'python' ? 'Python' : 'JavaScript';
+        const langClass = level.language === 'python' ? 'lang-python' : 'lang-javascript';
 
-    grid.querySelectorAll('.level-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const levelId = parseInt(card.dataset.levelId);
+        let statusBadge = '';
+        if (isCompleted) {
+          statusBadge = `<span class="lp-node__mastery ${mClass}">${mText}</span>`;
+        } else if (isNext) {
+          statusBadge = '<span class="lp-node__next">推荐</span>';
+        } else {
+          statusBadge = '<span class="lp-node__locked">待解锁</span>';
+        }
+
+        html += `
+          <div class="lp-node ${isCompleted ? 'lp-node--completed' : ''} ${isNext ? 'lp-node--next' : ''}" data-level-id="${level.id}">
+            <div class="lp-node__step">${idx + 1}</div>
+            <div class="lp-node__content">
+              <div class="lp-node__title">${this.escapeHtml(level.title)}</div>
+              <div class="lp-node__meta">
+                <span class="level-card__lang ${langClass}">${langLabel}</span>
+                <span class="level-card__stars">${this.renderStars(level.difficulty)}</span>
+                ${statusBadge}
+              </div>
+              <div class="lp-node__knowledge">${this.escapeHtml(level.knowledgePoint)}</div>
+            </div>
+            ${!isBuiltIn ? '<span class="level-badge level-badge--custom">\u81EA\u5B9A\u4E49</span>' : ''}
+          </div>
+        `;
+      });
+
+      html += '</div></div>';
+    }
+
+    path.innerHTML = html;
+
+    path.querySelectorAll('.lp-node').forEach(node => {
+      node.addEventListener('click', () => {
+        const levelId = parseInt(node.dataset.levelId);
         this.startLevel(levelId);
       });
     });
@@ -583,7 +657,129 @@ class App {
 
     noteTextarea.dataset.cardId = cardId;
 
+    const masteryLog = scoreManager.getMasteryLog(level.id);
+    const historyContainer = document.getElementById('masteryHistoryContent');
+    if (masteryLog.length > 0) {
+      document.getElementById('knowledgeMasteryHistory').style.display = 'block';
+      let historyHtml = '';
+      masteryLog.forEach(log => {
+        const date = new Date(log.timestamp);
+        const timeStr = (date.getMonth() + 1) + '/' + date.getDate() + ' ' + date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+        const deltaSign = log.delta >= 0 ? '+' : '';
+        const deltaClass = log.delta >= 0 ? 'mastery-delta--up' : 'mastery-delta--down';
+        historyHtml += `
+          <div class="mastery-history-entry">
+            <span class="mastery-history__reason">${log.reason}</span>
+            <span class="mastery-history__change ${deltaClass}">${deltaSign}${log.delta}</span>
+            <span class="mastery-history__value">${log.before} → ${log.after}</span>
+            <span class="mastery-history__time">${timeStr}</span>
+          </div>
+        `;
+      });
+      historyContainer.innerHTML = historyHtml;
+    } else {
+      document.getElementById('knowledgeMasteryHistory').style.display = 'none';
+      historyContainer.innerHTML = '';
+    }
+
     document.getElementById('knowledgeCardOverlay').classList.remove('hidden');
+  }
+
+  openFavorites() {
+    const favorites = scoreManager.getFavorites();
+    const container = document.getElementById('favoritesContent');
+
+    if (favorites.length === 0) {
+      container.innerHTML = '<div class="review-empty">暂无收藏的知识卡片</div>';
+      document.getElementById('favoritesOverlay').classList.remove('hidden');
+      return;
+    }
+
+    let html = '<div class="favorites-list">';
+    const allLevels = [...LEVELS, ...this.customLevels];
+
+    for (const favId of favorites) {
+      let entry = null;
+      let levelFound = null;
+      let note = '';
+
+      if (favId.startsWith('custom_')) {
+        const levelId = parseInt(favId.slice(7));
+        levelFound = allLevels.find(l => l.id === levelId);
+        if (levelFound) {
+          entry = this.getKnowledgeData(levelFound);
+        }
+      } else {
+        entry = KNOWLEDGE_CARDS[favId];
+      }
+      note = scoreManager.getKnowledgeNote(favId);
+
+      if (!entry) continue;
+
+      html += `
+        <div class="favorite-card" data-card-id="${favId}">
+          <div class="favorite-card__info">
+            <div class="favorite-card__title">${this.escapeHtml(entry.title)}</div>
+            <div class="favorite-card__summary">${this.escapeHtml(entry.summary)}</div>
+            <div class="favorite-card__note">${note ? ('💬 ' + this.escapeHtml(note.slice(0, 60) + (note.length > 60 ? '...' : ''))) : '(暂无笔记)'}</div>
+          </div>
+          <button class="btn btn--outline btn--sm favorite-card__open-btn" data-card-id="${favId}">打开</button>
+        </div>
+      `;
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+
+    container.querySelectorAll('.favorite-card__open-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cardId = btn.dataset.cardId;
+
+        let level = null;
+        if (cardId.startsWith('custom_')) {
+          const levelId = parseInt(cardId.slice(7));
+          level = allLevels.find(l => l.id === levelId);
+        } else {
+          for (const l of allLevels) {
+            if (l.knowledgeId === cardId) {
+              level = l;
+              break;
+            }
+          }
+        }
+
+        document.getElementById('favoritesOverlay').classList.add('hidden');
+        if (level) {
+          this.openKnowledgeCard(level);
+        }
+      });
+    });
+
+    container.querySelectorAll('.favorite-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const cardId = card.dataset.cardId;
+        let level = null;
+        const allLevels = [...LEVELS, ...this.customLevels];
+        if (cardId.startsWith('custom_')) {
+          const levelId = parseInt(cardId.slice(7));
+          level = allLevels.find(l => l.id === levelId);
+        } else {
+          for (const l of allLevels) {
+            if (l.knowledgeId === cardId) {
+              level = l;
+              break;
+            }
+          }
+        }
+        document.getElementById('favoritesOverlay').classList.add('hidden');
+        if (level) {
+          this.openKnowledgeCard(level);
+        }
+      });
+    });
+
+    document.getElementById('favoritesOverlay').classList.remove('hidden');
   }
 
   getKnowledgeData(level) {
@@ -932,11 +1128,45 @@ class App {
   }
 
   renderWrongBook() {
-    const data = scoreManager.getWrongBookData();
+    const masteryFilter = document.getElementById('filterMastery').value;
+    const sortOrder = document.getElementById('sortWrongBook').value;
+    const filters = { mastery: masteryFilter, sort: sortOrder };
+    const data = scoreManager.getWrongBookDataFiltered(filters);
     const container = document.getElementById('wrongBookContent');
 
+    const reviewPlan = scoreManager.getTodayReviewPlan();
+    const todaySection = document.getElementById('reviewTodaySection');
+    if (reviewPlan.length > 0) {
+      let planHtml = '';
+      for (const item of reviewPlan) {
+        const mClass = scoreManager.getMasteryColorClass(item.mastery);
+        const mText = scoreManager.getMasteryLevelText(item.mastery);
+        planHtml += `
+          <div class="review-today__item" data-level-id="${item.levelId}">
+            <div class="review-today__item-info">
+              <span class="review-today__item-title">${this.escapeHtml(item.title)}</span>
+              <span class="mastery-badge ${mClass}">${mText} (${item.mastery})</span>
+            </div>
+            <button class="btn btn--outline btn--sm review-today__redo-btn" data-level-id="${item.levelId}">重做</button>
+          </div>
+        `;
+      }
+      document.getElementById('reviewTodayList').innerHTML = planHtml;
+      todaySection.style.display = 'block';
+
+      todaySection.querySelectorAll('.review-today__item, .review-today__redo-btn').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const levelId = parseInt(el.dataset.levelId);
+          this.startLevel(levelId);
+        });
+      });
+    } else {
+      todaySection.style.display = 'none';
+    }
+
     if (data.length === 0) {
-      container.innerHTML = '<div class="review-empty">\u6682\u65E0\u9519\u9898\u8BB0\u5F55\uFF0C\u7EE7\u7EED\u52A0\u6CB9\uFF01</div>';
+      container.innerHTML = '<div class="review-empty">暂无符合条件的错题记录，继续加油！</div>';
       this.updateStatusBar();
       return;
     }
@@ -968,6 +1198,18 @@ class App {
         ? `<span class="mastery-badge ${mClass}">${mText} (${entry.mastery})</span>`
         : '';
 
+      const masteryLog = scoreManager.getMasteryLog(entry.levelId);
+      let historyHtml = '';
+      if (masteryLog.length > 0) {
+        historyHtml = '<div class="wrong-book-card__section"><span class="wrong-book-card__section-label">掌握度变化：</span><div class="mastery-log-mini">';
+        for (const log of masteryLog.slice(0, 3)) {
+          const deltaSign = log.delta >= 0 ? '+' : '';
+          const deltaClass = log.delta >= 0 ? 'mastery-delta--up' : 'mastery-delta--down';
+          historyHtml += `<span class="mastery-log-entry ${deltaClass}">${log.reason} ${deltaSign}${log.delta} (${log.before}→${log.after})</span>`;
+        }
+        historyHtml += '</div></div>';
+      }
+
       html += `
         <div class="wrong-book-card">
           <div class="wrong-book-card__header">
@@ -976,36 +1218,38 @@ class App {
               <span class="wrong-book-card__meta">
                 <span class="lang-tag">${langLabel}</span>
                 <span>${this.renderStars(entry.difficulty)}</span>
-                <span>\u7B54\u9519 ${entry.wrongCount} \u6B21</span>
+                <span>答错 ${entry.wrongCount} 次</span>
                 ${masteryHtml}
               </span>
             </div>
             <div class="wrong-book-card__actions">
-              <button class="btn btn--outline btn--sm wrong-book-card__redo-btn" data-level-id="${entry.levelId}">\u91CD\u505A\u6B64\u5173</button>
+              <button class="btn btn--outline btn--sm wrong-book-card__redo-btn" data-level-id="${entry.levelId}">重做此关</button>
             </div>
           </div>
 
           <div class="wrong-book-card__body">
             <div class="wrong-book-card__section">
-              <span class="wrong-book-card__section-label">\u9519\u8BEF\u7C7B\u578B\uFF1A</span>
+              <span class="wrong-book-card__section-label">错误类型：</span>
               <span>${this.escapeHtml(entry.errorType)}</span>
             </div>
 
             <div class="wrong-book-card__section">
-              <span class="wrong-book-card__section-label">\u4F60\u9009\u62E9\u7684\u9519\u8BEF\u65B9\u6848\uFF1A</span>
+              <span class="wrong-book-card__section-label">你选择的错误方案：</span>
               <div class="wrong-options-list">${wrongOptionsHtml}</div>
             </div>
 
             <div class="wrong-book-card__section">
-              <span class="wrong-book-card__section-label">\u6B63\u786E\u4FEE\u590D\u601D\u8DEF\uFF1A</span>
+              <span class="wrong-book-card__section-label">正确修复思路：</span>
               <pre class="wrong-book-card__correct-code">${this.escapeHtml(entry.correctOptionCode)}</pre>
             </div>
+
+            ${historyHtml}
           </div>
 
           ${hasKnowledge ? `
           <div class="wrong-book-card__footer">
             <button class="btn btn--ghost btn--sm wrong-book-card__knowledge-btn" data-level-id="${entry.levelId}">
-              \uD83D\uDCDA \u67E5\u770B\u77E5\u8BC6\u70B9
+              📚 查看知识点
             </button>
           </div>
           ` : ''}
