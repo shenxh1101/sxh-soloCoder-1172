@@ -302,8 +302,8 @@
           </div>
 
           <div class="review-section">
-            <h3 class="review-section__title">&#128203; 关卡明细</h3>
-            <div class="review-section__body" id="reviewLevelDetails"></div>
+            <h3 class="review-section__title">&#128203; 学习路径分组</h3>
+            <div class="review-section__body" id="reviewLevelGroups"></div>
           </div>
         </div>
       </div>
@@ -361,7 +361,10 @@
       <div class="modal modal--knowledge">
         <button class="modal__close" id="closeKnowledgeCard">&times;</button>
         <div class="knowledge-card">
-          <div class="knowledge-card__icon">&#128218;</div>
+          <div class="knowledge-card__top">
+            <div class="knowledge-card__icon">&#128218;</div>
+            <button class="btn btn--outline btn--sm btn-toggle-favorite" id="btnToggleFavorite"></button>
+          </div>
           <h3 class="knowledge-card__title" id="knowledgeTitle"></h3>
           <p class="knowledge-card__summary" id="knowledgeSummary"></p>
           <p class="knowledge-card__detail" id="knowledgeDetail"></p>
@@ -374,6 +377,10 @@
               <div class="example-label">&#10008; 错误写法</div>
               <pre class="example-code" id="knowledgeWrongCode"></pre>
             </div>
+          </div>
+          <div class="knowledge-card__notes">
+            <label class="knowledge-card__notes-label">我的笔记</label>
+            <textarea class="knowledge-card__notes-textarea" id="knowledgeNoteTextarea" placeholder="在这里记录你的理解、易错点、学习心得..."></textarea>
           </div>
         </div>
       </div>

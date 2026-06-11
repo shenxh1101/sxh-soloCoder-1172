@@ -1768,3 +1768,229 @@ body {
 .review-knowledge-btn:hover {
   color: var(--accent-primary);
 }
+
+/* ============ REVIEW CATEGORY GROUPS ============ */
+.review-category {
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+  overflow: hidden;
+  background: var(--bg-panel);
+  transition: border-color var(--transition-normal);
+}
+
+.review-category:hover {
+  border-color: var(--accent-blue);
+}
+
+.review-category__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  cursor: pointer;
+  background: var(--bg-secondary);
+  transition: background var(--transition-normal);
+}
+
+.review-category__header:hover {
+  background: var(--bg-hover);
+}
+
+.review-category__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.review-category__name {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.review-category__desc {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.review-category__stats {
+  display: flex;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.review-category__stat {
+  text-align: center;
+  min-width: 50px;
+}
+
+.review-category__stat-value {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+  line-height: 1.3;
+}
+
+.review-category__stat-label {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.review-category__toggle {
+  background: none;
+  border: 1px solid var(--border-primary);
+  color: var(--text-muted);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-normal);
+  flex-shrink: 0;
+}
+
+.review-category__toggle:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.review-category__toggle--open {
+  transform: rotate(180deg);
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.review-category__body {
+  border-top: 1px solid var(--border-primary);
+}
+
+.review-category__body.hidden {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .review-category__header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .review-category__stats {
+    gap: 12px;
+  }
+
+  .review-category__info {
+    width: 100%;
+  }
+}
+
+/* ============ MASTERY BADGE ============ */
+.mastery-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mastery-none {
+  background: rgba(106, 106, 128, 0.1);
+  color: var(--text-muted);
+}
+
+.mastery-low {
+  background: rgba(255, 71, 87, 0.12);
+  color: var(--accent-red);
+}
+
+.mastery-medium {
+  background: rgba(255, 176, 0, 0.12);
+  color: var(--accent-amber);
+}
+
+.mastery-high {
+  background: rgba(0, 212, 255, 0.12);
+  color: var(--accent-blue);
+}
+
+.mastery-perfect {
+  background: rgba(46, 213, 115, 0.12);
+  color: var(--accent-green);
+}
+
+/* ============ KNOWLEDGE CARD NOTES & FAVORITES ============ */
+.knowledge-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.btn-toggle-favorite {
+  font-size: 0.85rem;
+  padding: 6px 14px;
+  transition: all var(--transition-normal);
+}
+
+.btn--favorited {
+  background: rgba(168, 85, 247, 0.1);
+  border-color: var(--accent-purple);
+  color: var(--accent-purple);
+}
+
+.btn--favorited:hover {
+  border-color: var(--accent-purple);
+  color: var(--accent-purple);
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
+}
+
+.knowledge-card__notes {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-primary);
+}
+
+.knowledge-card__notes-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.knowledge-card__notes-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: border-color var(--transition-normal);
+}
+
+.knowledge-card__notes-textarea:focus {
+  border-color: var(--accent-purple);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+}
+
+.knowledge-card__notes-textarea::placeholder {
+  color: var(--text-muted);
+}

@@ -1,3 +1,17 @@
+const LEVEL_CATEGORIES = [
+  { id: 'basic-syntax',   name: '基础语法入门',   description: '变量、字符串、打印函数、引号闭合' },
+  { id: 'control-flow',   name: '控制流与缩进',   description: '条件判断、循环、缩进规则、花括号匹配' },
+  { id: 'data-structures',name: '数据结构基础',   description: '列表、字典、数组、对象、括号匹配' },
+  { id: 'functions',      name: '函数定义与调用', description: '函数语法、参数传递、返回值' },
+  { id: 'custom',         name: '自定义练习',     description: '玩家创建的自定义关卡' }
+];
+
+const CATEGORY_MAP = {
+  1: 'basic-syntax', 2: 'basic-syntax', 3: 'control-flow', 4: 'basic-syntax',
+  5: 'data-structures', 6: 'control-flow', 7: 'data-structures', 8: 'data-structures',
+  9: 'functions', 10: 'control-flow'
+};
+
 const KNOWLEDGE_CARDS = {
   python_print: {
     id: 'python_print',
@@ -83,203 +97,81 @@ const KNOWLEDGE_CARDS = {
 
 const LEVELS = [
   {
-    id: 1,
-    title: '引号迷踪',
-    language: 'python',
-    difficulty: 1,
-    knowledgePoint: 'print函数基本用法',
-    knowledgeId: 'python_print',
-    buggyCode: 'print("Hello, World!)',
-    correctCode: 'print("Hello, World!")',
-    options: [
-      'print("Hello, World!")',
-      'print(Hello, World!)',
-      'print("Hello, World!',
-      'Print("Hello, World!")'
-    ],
-    correctIndex: 0,
-    errorLine: 1,
-    errorType: '字符串引号未闭合',
-    expectedOutput: 'Hello, World!'
+    id: 1, title: '引号迷踪', language: 'python', difficulty: 1,
+    knowledgePoint: 'print函数基本用法', knowledgeId: 'python_print',
+    buggyCode: 'print("Hello, World!)', correctCode: 'print("Hello, World!")',
+    options: ['print("Hello, World!")', 'print(Hello, World!)', 'print("Hello, World!', 'Print("Hello, World!")'],
+    correctIndex: 0, errorLine: 1, errorType: '字符串引号未闭合', expectedOutput: 'Hello, World!'
   },
   {
-    id: 2,
-    title: '消失的变量',
-    language: 'javascript',
-    difficulty: 1,
-    knowledgePoint: '变量声明',
-    knowledgeId: 'js_variable',
-    buggyCode: 'console.log(message);',
-    correctCode: 'let message = "Hello, JavaScript!";\nconsole.log(message);',
-    options: [
-      'let message = "Hello, JavaScript!";\nconsole.log(message);',
-      'console.log("message");',
-      'console.log(let message);',
-      'message = "Hello";\nconsole.log(message);'
-    ],
-    correctIndex: 0,
-    errorLine: 1,
-    errorType: '变量未定义',
-    expectedOutput: 'Hello, JavaScript!'
+    id: 2, title: '消失的变量', language: 'javascript', difficulty: 1,
+    knowledgePoint: '变量声明', knowledgeId: 'js_variable',
+    buggyCode: 'console.log(message);', correctCode: 'let message = "Hello, JavaScript!";\nconsole.log(message);',
+    options: ['let message = "Hello, JavaScript!";\nconsole.log(message);', 'console.log("message");', 'console.log(let message);', 'message = "Hello";\nconsole.log(message);'],
+    correctIndex: 0, errorLine: 1, errorType: '变量未定义', expectedOutput: 'Hello, JavaScript!'
   },
   {
-    id: 3,
-    title: '缩进考验',
-    language: 'python',
-    difficulty: 2,
-    knowledgePoint: 'if语句缩进',
-    knowledgeId: 'python_indent',
+    id: 3, title: '缩进考验', language: 'python', difficulty: 2,
+    knowledgePoint: 'if语句缩进', knowledgeId: 'python_indent',
     buggyCode: 'x = 10\nif x > 5:\nprint("x is greater than 5")',
     correctCode: 'x = 10\nif x > 5:\n    print("x is greater than 5")',
-    options: [
-      'x = 10\nif x > 5:\n    print("x is greater than 5")',
-      'x = 10\nif x > 5:\nprint("x is greater than 5")',
-      'x = 10\nif x > 5\n    print("x is greater than 5")',
-      'x = 10\nif (x > 5):\n    print("x is greater than 5")'
-    ],
-    correctIndex: 0,
-    errorLine: 3,
-    errorType: '缩进错误',
-    expectedOutput: 'x is greater than 5'
+    options: ['x = 10\nif x > 5:\n    print("x is greater than 5")', 'x = 10\nif x > 5:\nprint("x is greater than 5")', 'x = 10\nif x > 5\n    print("x is greater than 5")', 'x = 10\nif (x > 5):\n    print("x is greater than 5")'],
+    correctIndex: 0, errorLine: 3, errorType: '缩进错误', expectedOutput: 'x is greater than 5'
   },
   {
-    id: 4,
-    title: '消失的括号',
-    language: 'javascript',
-    difficulty: 2,
-    knowledgePoint: '函数参数括号',
-    knowledgeId: 'js_brackets',
+    id: 4, title: '消失的括号', language: 'javascript', difficulty: 2,
+    knowledgePoint: '函数参数括号', knowledgeId: 'js_brackets',
     buggyCode: 'function add(a, b {\n  return a + b;\n}\nconsole.log(add(3, 5));',
     correctCode: 'function add(a, b) {\n  return a + b;\n}\nconsole.log(add(3, 5));',
-    options: [
-      'function add(a, b) {\n  return a + b;\n}\nconsole.log(add(3, 5));',
-      'function add(a, b {\n  return a + b;\n}\nconsole.log(add(3, 5));',
-      'function add(a, b) {\n  return a + b;\n}\nconsole.log(add(3, 5)',
-      'function add(a, b) {\n  return a + b;\nconsole.log(add(3, 5));'
-    ],
-    correctIndex: 0,
-    errorLine: 1,
-    errorType: '括号不匹配',
-    expectedOutput: '8'
+    options: ['function add(a, b) {\n  return a + b;\n}\nconsole.log(add(3, 5));', 'function add(a, b {\n  return a + b;\n}\nconsole.log(add(3, 5));', 'function add(a, b) {\n  return a + b;\n}\nconsole.log(add(3, 5)', 'function add(a, b) {\n  return a + b;\nconsole.log(add(3, 5));'],
+    correctIndex: 0, errorLine: 1, errorType: '括号不匹配', expectedOutput: '8'
   },
   {
-    id: 5,
-    title: '列表缺口',
-    language: 'python',
-    difficulty: 2,
-    knowledgePoint: '列表操作',
-    knowledgeId: 'python_list',
+    id: 5, title: '列表缺口', language: 'python', difficulty: 2,
+    knowledgePoint: '列表操作', knowledgeId: 'python_list',
     buggyCode: 'fruits = ["apple", "banana", "orange"\nprint(fruits[0])',
     correctCode: 'fruits = ["apple", "banana", "orange"]\nprint(fruits[0])',
-    options: [
-      'fruits = ["apple", "banana", "orange"]\nprint(fruits[0])',
-      'fruits = ["apple", "banana", "orange"\nprint(fruits[0])',
-      'fruits = "apple", "banana", "orange"\nprint(fruits[0])',
-      'fruits = ["apple", "banana", "orange"]\nprint(fruits[1])'
-    ],
-    correctIndex: 0,
-    errorLine: 1,
-    errorType: '括号不匹配',
-    expectedOutput: 'apple'
+    options: ['fruits = ["apple", "banana", "orange"]\nprint(fruits[0])', 'fruits = ["apple", "banana", "orange"\nprint(fruits[0])', 'fruits = "apple", "banana", "orange"\nprint(fruits[0])', 'fruits = ["apple", "banana", "orange"]\nprint(fruits[1])'],
+    correctIndex: 0, errorLine: 1, errorType: '括号不匹配', expectedOutput: 'apple'
   },
   {
-    id: 6,
-    title: '循环迷局',
-    language: 'javascript',
-    difficulty: 3,
-    knowledgePoint: 'for循环语法',
-    knowledgeId: 'js_for_loop',
+    id: 6, title: '循环迷局', language: 'javascript', difficulty: 3,
+    knowledgePoint: 'for循环语法', knowledgeId: 'js_for_loop',
     buggyCode: 'for (let i = 0; i < 3; i++)\n  console.log("Count: " + i);\n  console.log("Done!");',
     correctCode: 'for (let i = 0; i < 3; i++) {\n  console.log("Count: " + i);\n  console.log("Done!");\n}',
-    options: [
-      'for (let i = 0; i < 3; i++) {\n  console.log("Count: " + i);\n  console.log("Done!");\n}',
-      'for (let i = 0; i < 3; i++)\n  console.log("Count: " + i);\n  console.log("Done!");',
-      'for (let i = 0; i < 3; i++) {\n  console.log("Count: " + i);\n}\nconsole.log("Done!");',
-      'for (let i = 0; i < 3; i++) {\n  console.log("Done!");\n  console.log("Count: " + i);\n}'
-    ],
-    correctIndex: 0,
-    errorLine: 2,
-    errorType: '缺少花括号导致逻辑错误',
-    expectedOutput: 'Count: 0\nDone!\nCount: 1\nDone!\nCount: 2\nDone!'
+    options: ['for (let i = 0; i < 3; i++) {\n  console.log("Count: " + i);\n  console.log("Done!");\n}', 'for (let i = 0; i < 3; i++)\n  console.log("Count: " + i);\n  console.log("Done!");', 'for (let i = 0; i < 3; i++) {\n  console.log("Count: " + i);\n}\nconsole.log("Done!");', 'for (let i = 0; i < 3; i++) {\n  console.log("Done!");\n  console.log("Count: " + i);\n}'],
+    correctIndex: 0, errorLine: 2, errorType: '缺少花括号导致逻辑错误', expectedOutput: 'Count: 0\nDone!\nCount: 1\nDone!\nCount: 2\nDone!'
   },
   {
-    id: 7,
-    title: '字典陷阱',
-    language: 'python',
-    difficulty: 3,
-    knowledgePoint: '字典与字符串拼接',
-    knowledgeId: 'python_dict',
+    id: 7, title: '字典陷阱', language: 'python', difficulty: 3,
+    knowledgePoint: '字典与字符串拼接', knowledgeId: 'python_dict',
     buggyCode: 'person = {"name": "Alice", "age": 25\nprint("Name: " + person["name"])',
     correctCode: 'person = {"name": "Alice", "age": 25}\nprint("Name: " + person["name"])',
-    options: [
-      'person = {"name": "Alice", "age": 25}\nprint("Name: " + person["name"])',
-      'person = {"name": "Alice, "age": 25}\nprint("Name: " + person["name"])',
-      'person = {"name": "Alice", "age": 25\nprint("Name: " + person["name"])',
-      'person = {"name": "Alice", "age": 25}\nprint("Name: " + person["name"]'
-    ],
-    correctIndex: 0,
-    errorLine: 1,
-    errorType: '字典花括号未闭合',
-    expectedOutput: 'Name: Alice'
+    options: ['person = {"name": "Alice", "age": 25}\nprint("Name: " + person["name"])', 'person = {"name": "Alice, "age": 25}\nprint("Name: " + person["name"])', 'person = {"name": "Alice", "age": 25\nprint("Name: " + person["name"])', 'person = {"name": "Alice", "age": 25}\nprint("Name: " + person["name"]'],
+    correctIndex: 0, errorLine: 1, errorType: '字典花括号未闭合', expectedOutput: 'Name: Alice'
   },
   {
-    id: 8,
-    title: '数组迷踪',
-    language: 'javascript',
-    difficulty: 3,
-    knowledgePoint: '数组方法链式调用',
-    knowledgeId: 'js_array_methods',
+    id: 8, title: '数组迷踪', language: 'javascript', difficulty: 3,
+    knowledgePoint: '数组方法链式调用', knowledgeId: 'js_array_methods',
     buggyCode: 'let result = numbers.map(x => x * 2);\nconsole.log(result);',
     correctCode: 'let numbers = [1, 2, 3];\nlet result = numbers.map(x => x * 2);\nconsole.log(result);',
-    options: [
-      'let numbers = [1, 2, 3];\nlet result = numbers.map(x => x * 2);\nconsole.log(result);',
-      'let result = numbers.map(x => x * 2);\nconsole.log(result);',
-      'let numbers = [1, 2, 3];\nlet result = numbers.map(x => x * 2);\nconsole.log(result)',
-      'let numbers = [1, 2, 3];\nlet result = numbers.map(x => x * 2);\nconsole.log(numbers);'
-    ],
-    correctIndex: 0,
-    errorLine: 1,
-    errorType: '变量未定义',
-    expectedOutput: '2,4,6'
+    options: ['let numbers = [1, 2, 3];\nlet result = numbers.map(x => x * 2);\nconsole.log(result);', 'let result = numbers.map(x => x * 2);\nconsole.log(result);', 'let numbers = [1, 2, 3];\nlet result = numbers.map(x => x * 2);\nconsole.log(result)', 'let numbers = [1, 2, 3];\nlet result = numbers.map(x => x * 2);\nconsole.log(numbers);'],
+    correctIndex: 0, errorLine: 1, errorType: '变量未定义', expectedOutput: '2,4,6'
   },
   {
-    id: 9,
-    title: '函数工坊',
-    language: 'python',
-    difficulty: 4,
-    knowledgePoint: '函数定义与调用',
-    knowledgeId: 'python_function',
+    id: 9, title: '函数工坊', language: 'python', difficulty: 4,
+    knowledgePoint: '函数定义与调用', knowledgeId: 'python_function',
     buggyCode: 'def calculate(a, b):\nreturn a * b + 10\n\nresult = calculate(3, 4)\nprint(result)',
     correctCode: 'def calculate(a, b):\n    return a * b + 10\n\nresult = calculate(3, 4)\nprint(result)',
-    options: [
-      'def calculate(a, b):\n    return a * b + 10\n\nresult = calculate(3, 4)\nprint(result)',
-      'def calculate(a, b):\nreturn a * b + 10\n\nresult = calculate(3, 4)\nprint(result)',
-      'def calculate(a, b)\n    return a * b + 10\n\nresult = calculate(3, 4)\nprint(result)',
-      'def calculate(a, b):\n    return a * b + 10\n\nresult = calculate(3 4)\nprint(result)'
-    ],
-    correctIndex: 0,
-    errorLine: 2,
-    errorType: '缩进错误',
-    expectedOutput: '22'
+    options: ['def calculate(a, b):\n    return a * b + 10\n\nresult = calculate(3, 4)\nprint(result)', 'def calculate(a, b):\nreturn a * b + 10\n\nresult = calculate(3, 4)\nprint(result)', 'def calculate(a, b)\n    return a * b + 10\n\nresult = calculate(3, 4)\nprint(result)', 'def calculate(a, b):\n    return a * b + 10\n\nresult = calculate(3 4)\nprint(result)'],
+    correctIndex: 0, errorLine: 2, errorType: '缩进错误', expectedOutput: '22'
   },
   {
-    id: 10,
-    title: '条件深渊',
-    language: 'javascript',
-    difficulty: 4,
-    knowledgePoint: '条件判断与逻辑运算',
-    knowledgeId: 'js_conditionals',
+    id: 10, title: '条件深渊', language: 'javascript', difficulty: 4,
+    knowledgePoint: '条件判断与逻辑运算', knowledgeId: 'js_conditionals',
     buggyCode: 'let score = 85;\nif (score >= 90) {\n  console.log("优秀");\n} else if (score >= 60 && score < 90 {\n  console.log("及格");\n} else {\n  console.log("不及格");\n}',
     correctCode: 'let score = 85;\nif (score >= 90) {\n  console.log("优秀");\n} else if (score >= 60 && score < 90) {\n  console.log("及格");\n} else {\n  console.log("不及格");\n}',
-    options: [
-      'let score = 85;\nif (score >= 90) {\n  console.log("优秀");\n} else if (score >= 60 && score < 90) {\n  console.log("及格");\n} else {\n  console.log("不及格");\n}',
-      'let score = 85;\nif (score >= 90) {\n  console.log("优秀");\n} else if (score >= 60 && score < 90 {\n  console.log("及格");\n} else {\n  console.log("不及格");\n}',
-      'let score = 85;\nif (score >= 90) {\n  console.log("优秀");\n} else if (score >= 60) {\n  console.log("及格");\n} else {\n  console.log("不及格");\n}',
-      'let score = 85;\nif (score >= 90) {\n  console.log("优秀")\n} else if (score >= 60 && score < 90) {\n  console.log("及格");\n} else {\n  console.log("不及格");\n}'
-    ],
-    correctIndex: 0,
-    errorLine: 4,
-    errorType: '括号不匹配',
-    expectedOutput: '及格'
+    options: ['let score = 85;\nif (score >= 90) {\n  console.log("优秀");\n} else if (score >= 60 && score < 90) {\n  console.log("及格");\n} else {\n  console.log("不及格");\n}', 'let score = 85;\nif (score >= 90) {\n  console.log("优秀");\n} else if (score >= 60 && score < 90 {\n  console.log("及格");\n} else {\n  console.log("不及格");\n}', 'let score = 85;\nif (score >= 90) {\n  console.log("优秀");\n} else if (score >= 60) {\n  console.log("及格");\n} else {\n  console.log("不及格");\n}', 'let score = 85;\nif (score >= 90) {\n  console.log("优秀")\n} else if (score >= 60 && score < 90) {\n  console.log("及格");\n} else {\n  console.log("不及格");\n}'],
+    correctIndex: 0, errorLine: 4, errorType: '括号不匹配', expectedOutput: '及格'
   }
 ];

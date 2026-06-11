@@ -94,17 +94,27 @@ class App {
     });
 
     document.getElementById('closeKnowledgeCard').addEventListener('click', () => {
+      this.saveKnowledgeNoteFromModal();
       document.getElementById('knowledgeCardOverlay').classList.add('hidden');
     });
 
     document.getElementById('knowledgeCardOverlay').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) {
+        this.saveKnowledgeNoteFromModal();
         document.getElementById('knowledgeCardOverlay').classList.add('hidden');
       }
     });
 
     document.getElementById('btnPreviewKnowledge').addEventListener('click', () => {
       this.showKnowledgeCardForCurrentLevel();
+    });
+
+    document.getElementById('btnToggleFavorite').addEventListener('click', () => {
+      this.toggleKnowledgeFavorite();
+    });
+
+    document.getElementById('knowledgeNoteTextarea').addEventListener('input', () => {
+      this.saveKnowledgeNoteFromModal();
     });
 
     document.getElementById('closeValidateModal').addEventListener('click', () => {
@@ -116,6 +126,23 @@ class App {
         document.getElementById('validateOverlay').classList.add('hidden');
       }
     });
+  }
+
+  saveKnowledgeNoteFromModal() {
+    const textarea = document.getElementById('knowledgeNoteTextarea');
+    const cardId = textarea.dataset.cardId;
+    if (cardId) {
+      scoreManager.setKnowledgeNote(cardId, textarea.value);
+    }
+  }
+
+  toggleKnowledgeFavorite() {
+    const btn = document.getElementById('btnToggleFavorite');
+    const cardId = btn.dataset.cardId;
+    if (!cardId) return;
+    const isNowFav = scoreManager.toggleFavorite(cardId);
+    btn.textContent = isNowFav ? '\u2605 \u5DF2\u6536\u85CF' : '\u2606 \u6536\u85CF';
+    btn.classList.toggle('btn--favorited', isNowFav);
   }
 
   updateThemeIcon() {
@@ -255,6 +282,7 @@ class App {
     this.currentLevel = level;
     this.selectedOptionIndex = -1;
     this.hintRevealed = false;
+    scoreManager.recordLevelMeta(level);
     scoreManager.recordAttempt(levelId);
     this.navigateTo('game-board', level);
   }
@@ -473,7 +501,12 @@ class App {
 
   onLevelComplete() {
     const level = this.currentLevel;
-    scoreManager.completeLevel(level.id, scoreManager.wasHintUsed(level.id));
+    const wasAlreadyCompleted = scoreManager.isLevelCompleted(level.id);
+    if (wasAlreadyCompleted) {
+      scoreManager.updateMasteryOnRedo(level.id);
+    } else {
+      scoreManager.completeLevel(level.id, scoreManager.wasHintUsed(level.id));
+    }
     this.updateStatusBar();
 
     document.getElementById('btnRun').disabled = true;
@@ -531,11 +564,24 @@ class App {
     const knowledge = this.getKnowledgeData(level);
     if (!knowledge) return;
 
+    const cardId = level.inlineKnowledge ? ('custom_' + level.id) : (level.knowledgeId || ('level_' + level.id));
+
     document.getElementById('knowledgeTitle').textContent = knowledge.title;
     document.getElementById('knowledgeSummary').textContent = knowledge.summary;
     document.getElementById('knowledgeDetail').textContent = knowledge.detail;
     document.getElementById('knowledgeCorrectCode').textContent = knowledge.correctExample;
     document.getElementById('knowledgeWrongCode').textContent = knowledge.wrongExample;
+
+    const noteTextarea = document.getElementById('knowledgeNoteTextarea');
+    noteTextarea.value = scoreManager.getKnowledgeNote(cardId);
+
+    const favBtn = document.getElementById('btnToggleFavorite');
+    const isFav = scoreManager.isFavorite(cardId);
+    favBtn.textContent = isFav ? '\u2605 \u5DF2\u6536\u85CF' : '\u2606 \u6536\u85CF';
+    favBtn.classList.toggle('btn--favorited', isFav);
+    favBtn.dataset.cardId = cardId;
+
+    noteTextarea.dataset.cardId = cardId;
 
     document.getElementById('knowledgeCardOverlay').classList.remove('hidden');
   }
@@ -743,43 +789,132 @@ class App {
     }
     document.getElementById('reviewErrorTypes').innerHTML = errorTypeHtml;
 
-    let levelHtml = '';
-    if (data.levelDetails.length === 0) {
-      levelHtml = '<div class="review-empty">\u6682\u65E0\u5173\u5361\u7EC6\u8282\u6570\u636E\u3002</div>';
-    } else {
-      levelHtml = '<div class="review-table-wrap"><table class="review-table">';
-      levelHtml += '<thead><tr>';
-      levelHtml += '<th>\u5173\u5361</th><th>\u8BED\u8A00</th><th>\u96BE\u5EA6</th><th>\u5C1D\u8BD5\u6B21\u6570</th><th>\u7B54\u9519\u6B21\u6570</th><th>\u63D0\u793A</th><th>\u751F\u547D\u6D88\u8017</th><th>\u72B6\u6001</th><th>\u64CD\u4F5C</th>';
-      levelHtml += '</tr></thead><tbody>';
-
-      const allLevels = [...LEVELS, ...this.customLevels];
-      for (const d of data.levelDetails) {
-        const langLabel = d.language === 'python' ? 'Python' : 'JavaScript';
-        const hintIcon = d.hintUsed ? '\uD83D\uDCA1' : '-';
-        const statusIcon = d.completed ? '\u2705' : '\u274C';
-        const wrongClass = d.wrongs > 0 ? 'review-table__cell--warn' : '';
-        const level = allLevels.find(l => l.id === d.id);
-        const hasKnowledge = level && (level.inlineKnowledge || level.knowledgeId);
-        const knowledgeBtn = hasKnowledge
-          ? `<button class="btn btn--sm btn--ghost review-knowledge-btn" data-level-id="${d.id}">\u77E5\u8BC6\u70B9</button>`
-          : '';
-        levelHtml += `
-          <tr>
-            <td>${this.escapeHtml(d.title)}</td>
-            <td>${langLabel}</td>
-            <td>${this.renderStars(d.difficulty)}</td>
-            <td>${d.attempts}</td>
-            <td class="${wrongClass}">${d.wrongs}</td>
-            <td>${hintIcon}</td>
-            <td>${d.livesLost}</td>
-            <td>${statusIcon}</td>
-            <td>${knowledgeBtn}</td>
-          </tr>
-        `;
+    const levelMap = {};
+    for (const d of data.levelDetails) {
+      const cat = d.category || 'custom';
+      if (!levelMap[cat]) {
+        levelMap[cat] = [];
       }
-      levelHtml += '</tbody></table></div>';
+      levelMap[cat].push(d);
     }
-    document.getElementById('reviewLevelDetails').innerHTML = levelHtml;
+
+    let groupHtml = '';
+    if (data.levelDetails.length === 0) {
+      groupHtml = '<div class="review-empty">\u6682\u65E0\u5173\u5361\u7EC6\u8282\u6570\u636E\u3002</div>';
+    } else {
+      for (const catDef of LEVEL_CATEGORIES) {
+        const levels = levelMap[catDef.id] || [];
+        if (levels.length === 0) continue;
+
+        const completedCount = levels.filter(l => l.completed).length;
+        const totalCount = levels.length;
+        const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+        let totalWrongs = 0;
+        let latestTime = 0;
+        for (const l of levels) {
+          totalWrongs += l.wrongs;
+          if (l.lastTime && l.lastTime > latestTime) {
+            latestTime = l.lastTime;
+          }
+        }
+        const avgWrongs = totalCount > 0 ? (totalWrongs / totalCount).toFixed(1) : '0';
+
+        let lastTimeStr = '\u6682\u65E0\u8BB0\u5F55';
+        if (latestTime > 0) {
+          const d = new Date(latestTime);
+          lastTimeStr = (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+        }
+
+        groupHtml += `
+          <div class="review-category" data-category="${catDef.id}">
+            <div class="review-category__header">
+              <div class="review-category__info">
+                <span class="review-category__name">${catDef.name}</span>
+                <span class="review-category__desc">${catDef.description}</span>
+              </div>
+              <div class="review-category__stats">
+                <div class="review-category__stat">
+                  <span class="review-category__stat-value">${completionRate}%</span>
+                  <span class="review-category__stat-label">\u5B8C\u6210\u5EA6</span>
+                </div>
+                <div class="review-category__stat">
+                  <span class="review-category__stat-value">${avgWrongs}</span>
+                  <span class="review-category__stat-label">\u5747\u9519\u6B21\u6570</span>
+                </div>
+                <div class="review-category__stat">
+                  <span class="review-category__stat-value">${lastTimeStr}</span>
+                  <span class="review-category__stat-label">\u6700\u8FD1\u7EC3\u4E60</span>
+                </div>
+              </div>
+              <button class="review-category__toggle" data-toggle="${catDef.id}">\u25BC</button>
+            </div>
+            <div class="review-category__body" id="reviewCatBody_${catDef.id}">
+              <div class="review-table-wrap"><table class="review-table">
+                <thead><tr>
+                  <th>\u5173\u5361</th><th>\u8BED\u8A00</th><th>\u96BE\u5EA6</th><th>\u5C1D\u8BD5</th><th>\u7B54\u9519</th><th>\u63D0\u793A</th><th>\u751F\u547D</th><th>\u638C\u63E1\u5EA6</th><th>\u72B6\u6001</th><th>\u64CD\u4F5C</th>
+                </tr></thead><tbody>
+        `;
+
+        const allLevels = [...LEVELS, ...this.customLevels];
+        for (const d of levels) {
+          const langLabel = d.language === 'python' ? 'Python' : 'JavaScript';
+          const hintIcon = d.hintUsed ? '\uD83D\uDCA1' : '-';
+          const statusIcon = d.completed ? '\u2705' : '\u274C';
+          const wrongClass = d.wrongs > 0 ? 'review-table__cell--warn' : '';
+          const level = allLevels.find(l => l.id === d.id);
+          const hasKnowledge = level && (level.inlineKnowledge || level.knowledgeId);
+          const knowledgeBtn = hasKnowledge
+            ? `<button class="btn btn--sm btn--ghost review-knowledge-btn" data-level-id="${d.id}">\u77E5\u8BC6\u70B9</button>`
+            : '';
+
+          const mClass = scoreManager.getMasteryColorClass(d.mastery);
+          const mText = scoreManager.getMasteryLevelText(d.mastery);
+          const masteryHtml = d.completed
+            ? `<span class="mastery-badge ${mClass}">${mText} (${d.mastery})</span>`
+            : '<span class="mastery-badge mastery-none">\u672A\u901A\u5173</span>';
+
+          groupHtml += `
+            <tr>
+              <td>${this.escapeHtml(d.title)}</td>
+              <td>${langLabel}</td>
+              <td>${this.renderStars(d.difficulty)}</td>
+              <td>${d.attempts}</td>
+              <td class="${wrongClass}">${d.wrongs}</td>
+              <td>${hintIcon}</td>
+              <td>${d.livesLost}</td>
+              <td>${masteryHtml}</td>
+              <td>${statusIcon}</td>
+              <td>${knowledgeBtn}</td>
+            </tr>
+          `;
+        }
+
+        groupHtml += '</tbody></table></div></div></div>';
+      }
+    }
+    document.getElementById('reviewLevelGroups').innerHTML = groupHtml;
+
+    document.querySelectorAll('.review-category__toggle').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const catId = btn.dataset.toggle;
+        const body = document.getElementById('reviewCatBody_' + catId);
+        if (body) {
+          body.classList.toggle('hidden');
+          btn.classList.toggle('review-category__toggle--open');
+        }
+      });
+    });
+
+    document.querySelectorAll('.review-category__header').forEach(header => {
+      header.addEventListener('click', () => {
+        const toggleBtn = header.querySelector('.review-category__toggle');
+        if (toggleBtn) {
+          toggleBtn.click();
+        }
+      });
+    });
 
     document.querySelectorAll('.review-knowledge-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -827,6 +962,12 @@ class App {
 
       const hasKnowledge = entry.knowledgeId || entry.inlineKnowledge;
 
+      const mClass = scoreManager.getMasteryColorClass(entry.mastery);
+      const mText = scoreManager.getMasteryLevelText(entry.mastery);
+      const masteryHtml = entry.mastery > 0
+        ? `<span class="mastery-badge ${mClass}">${mText} (${entry.mastery})</span>`
+        : '';
+
       html += `
         <div class="wrong-book-card">
           <div class="wrong-book-card__header">
@@ -836,6 +977,7 @@ class App {
                 <span class="lang-tag">${langLabel}</span>
                 <span>${this.renderStars(entry.difficulty)}</span>
                 <span>\u7B54\u9519 ${entry.wrongCount} \u6B21</span>
+                ${masteryHtml}
               </span>
             </div>
             <div class="wrong-book-card__actions">

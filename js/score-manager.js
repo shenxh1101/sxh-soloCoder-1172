@@ -3,6 +3,10 @@ class ScoreManager {
     this.INITIAL_LIVES = 3;
     this.BASE_SCORE = 100;
     this.NO_HINT_BONUS = 50;
+    this.MASTERY_WRONG_PENALTY = 10;
+    this.MASTERY_HINT_PENALTY = 15;
+    this.MASTERY_DAY_DECAY = 5;
+    this.MASTERY_REDO_BONUS = 20;
     this.load();
   }
 
@@ -20,11 +24,27 @@ class ScoreManager {
         this.attemptsPerLevel = parsed.attemptsPerLevel || {};
         this.livesLostPerLevel = parsed.livesLostPerLevel || {};
         this.wrongRecords = parsed.wrongRecords || {};
+        this.levelMeta = parsed.levelMeta || {};
+        this.lastAttemptTimes = parsed.lastAttemptTimes || {};
       } else {
         this.reset();
       }
     } catch (e) {
       this.reset();
+    }
+
+    try {
+      const notesData = localStorage.getItem('syntax_game_notes');
+      this.notes = notesData ? JSON.parse(notesData) : {};
+    } catch (e) {
+      this.notes = {};
+    }
+
+    try {
+      const favData = localStorage.getItem('syntax_game_favorites');
+      this.favorites = favData ? JSON.parse(favData) : [];
+    } catch (e) {
+      this.favorites = [];
     }
   }
 
@@ -38,9 +58,19 @@ class ScoreManager {
       errorTypesEncountered: this.errorTypesEncountered,
       attemptsPerLevel: this.attemptsPerLevel,
       livesLostPerLevel: this.livesLostPerLevel,
-      wrongRecords: this.wrongRecords
+      wrongRecords: this.wrongRecords,
+      levelMeta: this.levelMeta,
+      lastAttemptTimes: this.lastAttemptTimes
     };
     localStorage.setItem('syntax_game_progress', JSON.stringify(data));
+  }
+
+  saveNotes() {
+    localStorage.setItem('syntax_game_notes', JSON.stringify(this.notes));
+  }
+
+  saveFavorites() {
+    localStorage.setItem('syntax_game_favorites', JSON.stringify(this.favorites));
   }
 
   reset() {
@@ -53,7 +83,13 @@ class ScoreManager {
     this.attemptsPerLevel = {};
     this.livesLostPerLevel = {};
     this.wrongRecords = {};
+    this.levelMeta = {};
+    this.lastAttemptTimes = {};
+    this.notes = {};
+    this.favorites = [];
     this.save();
+    this.saveNotes();
+    this.saveFavorites();
   }
 
   isLevelCompleted(levelId) {
@@ -90,7 +126,112 @@ class ScoreManager {
 
   recordAttempt(levelId) {
     this.attemptsPerLevel[levelId] = (this.attemptsPerLevel[levelId] || 0) + 1;
+    this.recordLastAttempt(levelId);
     this.save();
+  }
+
+  recordLastAttempt(levelId) {
+    this.lastAttemptTimes[levelId] = Date.now();
+    this.save();
+  }
+
+  getLastAttemptTime(levelId) {
+    return this.lastAttemptTimes[levelId] || null;
+  }
+
+  recordLevelMeta(level) {
+    this.levelMeta[level.id] = {
+      title: level.title,
+      language: level.language,
+      difficulty: level.difficulty,
+      knowledgePoint: level.knowledgePoint,
+      knowledgeId: level.knowledgeId,
+      inlineKnowledge: level.inlineKnowledge || null,
+      errorType: level.errorType,
+      category: level.id <= 10 ? (CATEGORY_MAP[level.id] || 'basic-syntax') : 'custom'
+    };
+    this.save();
+  }
+
+  getLevelMeta(levelId) {
+    return this.levelMeta[levelId] || null;
+  }
+
+  calculateMastery(levelId) {
+    if (!this.isLevelCompleted(levelId)) {
+      return 0;
+    }
+
+    let mastery = 100;
+    const wrongCount = this.wrongAttempts[levelId] || 0;
+    const usedHint = this.wasHintUsed(levelId) ? 1 : 0;
+    const lastTime = this.lastAttemptTimes[levelId];
+
+    mastery -= wrongCount * this.MASTERY_WRONG_PENALTY;
+    mastery -= usedHint * this.MASTERY_HINT_PENALTY;
+
+    if (lastTime) {
+      const daysSince = (Date.now() - lastTime) / (1000 * 60 * 60 * 24);
+      mastery -= Math.floor(daysSince / 7) * this.MASTERY_DAY_DECAY;
+    }
+
+    mastery = Math.max(0, Math.min(100, mastery));
+    return Math.round(mastery);
+  }
+
+  getMasteryLevelText(mastery) {
+    if (mastery === 0) return '未掌握';
+    if (mastery < 30) return '生疏';
+    if (mastery < 60) return '掌握中';
+    if (mastery < 85) return '已掌握';
+    return '精通';
+  }
+
+  getMasteryColorClass(mastery) {
+    if (mastery === 0) return 'mastery-none';
+    if (mastery < 30) return 'mastery-low';
+    if (mastery < 60) return 'mastery-medium';
+    if (mastery < 85) return 'mastery-high';
+    return 'mastery-perfect';
+  }
+
+  updateMasteryOnRedo(levelId) {
+    if (!this.isLevelCompleted(levelId)) {
+      return;
+    }
+    const current = this.calculateMastery(levelId);
+    const updated = Math.min(100, current + this.MASTERY_REDO_BONUS);
+    this.recordLastAttempt(levelId);
+    this.save();
+    return updated;
+  }
+
+  setKnowledgeNote(cardId, note) {
+    this.notes[cardId] = note;
+    this.saveNotes();
+  }
+
+  getKnowledgeNote(cardId) {
+    return this.notes[cardId] || '';
+  }
+
+  toggleFavorite(cardId) {
+    const index = this.favorites.indexOf(cardId);
+    if (index >= 0) {
+      this.favorites.splice(index, 1);
+    } else {
+      this.favorites.push(cardId);
+    }
+    this.saveFavorites();
+    return this.isFavorite(cardId);
+  }
+
+  isFavorite(cardId) {
+    return this.favorites.includes(cardId);
+  }
+
+  getFavorites() {
+    return this.favorites;
   }
 
   recordWrongAnswer(levelId, errorType) {
@@ -128,7 +269,6 @@ class ScoreManager {
 
   getWrongBookData() {
     const entries = [];
-    const allLevels = [...LEVELS];
     const levelIds = Object.keys(this.wrongRecords).map(Number);
 
     for (const id of levelIds) {
@@ -137,6 +277,7 @@ class ScoreManager {
 
       const latest = records[records.length - 1];
       const snap = latest.levelSnapshot;
+      const meta = this.levelMeta[id];
       const wrongCount = records.length;
       const uniqueWrongOptions = [...new Set(records.map(r => r.wrongOptionIndex))];
 
@@ -145,20 +286,28 @@ class ScoreManager {
         optionCode: r.wrongOptionCode
       }));
 
+      const title = meta ? meta.title : snap.title;
+      const language = meta ? meta.language : snap.language;
+      const difficulty = meta ? meta.difficulty : snap.difficulty;
+      const knowledgePoint = meta ? meta.knowledgePoint : snap.knowledgePoint;
+      const knowledgeId = meta ? meta.knowledgeId : snap.knowledgeId;
+      const inlineKnowledge = meta ? meta.inlineKnowledge : snap.inlineKnowledge;
+
       entries.push({
         levelId: id,
-        title: snap.title,
-        language: snap.language,
-        difficulty: snap.difficulty,
-        knowledgePoint: snap.knowledgePoint,
-        knowledgeId: snap.knowledgeId,
+        title,
+        language,
+        difficulty,
+        knowledgePoint,
+        knowledgeId,
         errorType: snap.errorType,
         correctOptionCode: snap.correctOptionCode,
-        inlineKnowledge: snap.inlineKnowledge,
+        inlineKnowledge,
         wrongCount,
         uniqueWrongOptions,
         allWrongDetails,
-        lastWrongTime: latest.timestamp
+        lastWrongTime: latest.timestamp,
+        mastery: this.calculateMastery(id)
       });
     }
 
@@ -208,21 +357,30 @@ class ScoreManager {
     for (const idStr of allLevelIds) {
       const id = parseInt(idStr);
       const level = allLevels.find(l => l.id === id);
-      const title = level ? level.title : ('\u5173\u5361 ' + id);
-      const language = level ? level.language : '';
-      const difficulty = level ? level.difficulty : 1;
+      const meta = this.levelMeta[id];
+      const title = meta ? meta.title : (level ? level.title : ('\u5173\u5361 ' + id));
+      const language = meta ? meta.language : (level ? level.language : '');
+      const difficulty = meta ? meta.difficulty : (level ? level.difficulty : 1);
+      const knowledgePoint = meta ? meta.knowledgePoint : (level ? level.knowledgePoint : '');
+      const knowledgeId = meta ? meta.knowledgeId : (level ? level.knowledgeId : '');
+      const inlineKnowledge = meta ? meta.inlineKnowledge : (level ? level.inlineKnowledge : null);
+      const category = meta ? meta.category : (level && level.id <= 10 ? (CATEGORY_MAP[level.id] || 'basic-syntax') : 'custom');
       const attempts = this.attemptsPerLevel[id] || 0;
       const wrongs = this.wrongAttempts[id] || 0;
       const hintUsed = this.wasHintUsed(id);
       const livesLost = this.livesLostPerLevel[id] || 0;
       const completed = this.isLevelCompleted(id);
+      const mastery = completed ? this.calculateMastery(id) : 0;
+      const lastTime = this.lastAttemptTimes[id] || null;
 
       if (hintUsed) totalHintsUsed++;
       totalWrongAttempts += wrongs;
 
       levelDetails.push({
         id, title, language, difficulty,
-        attempts, wrongs, hintUsed, livesLost, completed
+        knowledgePoint, knowledgeId, inlineKnowledge,
+        category, attempts, wrongs, hintUsed, livesLost, completed,
+        mastery, lastTime
       });
     }
 
@@ -247,6 +405,8 @@ class ScoreManager {
     this.livesLostPerLevel = {};
     this.hintsUsedForLevel = {};
     this.wrongRecords = {};
+    this.levelMeta = {};
+    this.lastAttemptTimes = {};
     this.save();
   }
 }
