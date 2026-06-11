@@ -67,6 +67,12 @@
             <span class="btn__icon">&#43;</span>
             创建自定义关卡
           </button>
+          <button class="btn btn--outline" id="btnReviewPage">
+            <span class="btn__icon">&#128202;</span> 进度复盘
+          </button>
+          <button class="btn btn--outline" id="btnValidateLevels">
+            <span class="btn__icon">&#9881;</span> 校验关卡
+          </button>
         </div>
       </div>
     </main>
@@ -189,9 +195,54 @@
             </div>
           </div>
 
+          <div class="form-row">
+            <div class="form-group form-group--third">
+              <label class="form-label">错误行号</label>
+              <input type="number" class="form-input" id="customErrorLine" placeholder="1" value="1" min="1">
+            </div>
+            <div class="form-group form-group--third">
+              <label class="form-label">难度 (1-4)</label>
+              <select class="form-select" id="customDifficulty">
+                <option value="1">&#9733; 简单</option>
+                <option value="2">&#9733;&#9733; 中等</option>
+                <option value="3">&#9733;&#9733;&#9733; 困难</option>
+                <option value="4">&#9733;&#9733;&#9733;&#9733; 专家</option>
+              </select>
+            </div>
+            <div class="form-group form-group--third">
+              <label class="form-label">期望输出</label>
+              <input type="text" class="form-input" id="customExpectedOutput" placeholder="运行结果...">
+            </div>
+          </div>
+
+          <div class="custom-level__section">
+            <h3 class="custom-level__section-title">&#128218; 知识卡片内容（可选，填写后通关时会展示）</h3>
+          </div>
+
           <div class="form-group">
-            <label class="form-label">期望输出（可选）</label>
-            <input type="text" class="form-input" id="customExpectedOutput" placeholder="正确代码运行的期望输出...">
+            <label class="form-label">知识点标题</label>
+            <input type="text" class="form-input" id="customKnowledgeTitle" placeholder="例如：Python 缩进规则">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">知识点摘要</label>
+            <input type="text" class="form-input" id="customKnowledgeSummary" placeholder="一句话概括知识点...">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">详细说明</label>
+            <textarea class="form-textarea" id="customKnowledgeDetail" rows="3" placeholder="详细解释这个语法知识点的含义和用法..."></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group form-group--half">
+              <label class="form-label">正确代码示例</label>
+              <textarea class="form-textarea form-textarea--code" id="customKnowledgeCorrect" rows="3" placeholder="展示正确的写法..."></textarea>
+            </div>
+            <div class="form-group form-group--half">
+              <label class="form-label">错误代码示例</label>
+              <textarea class="form-textarea form-textarea--code" id="customKnowledgeWrong" rows="3" placeholder="展示错误的写法..."></textarea>
+            </div>
           </div>
 
           <div class="custom-level__actions">
@@ -203,6 +254,63 @@
         </div>
       </div>
     </main>
+
+    <!-- ============ REVIEW PAGE ============ -->
+    <main id="pageReview" class="page hidden">
+      <div class="review-page">
+        <div class="review-page__header">
+          <button class="btn btn--ghost" id="btnBackFromReview">
+            <span class="btn__icon">&#8592;</span> 返回关卡列表
+          </button>
+          <h2 class="review-page__title">&#128202; 学习进度复盘</h2>
+          <button class="btn btn--outline btn--sm" id="btnResetReview">清除复盘数据</button>
+        </div>
+
+        <div class="review-page__overview">
+          <div class="review-stat-card">
+            <span class="review-stat-card__icon">&#9733;</span>
+            <span class="review-stat-card__value" id="reviewScore">0</span>
+            <span class="review-stat-card__label">总得分</span>
+          </div>
+          <div class="review-stat-card">
+            <span class="review-stat-card__icon">&#127942;</span>
+            <span class="review-stat-card__value" id="reviewCompleted">0/10</span>
+            <span class="review-stat-card__label">通关进度</span>
+          </div>
+          <div class="review-stat-card">
+            <span class="review-stat-card__icon">&#128161;</span>
+            <span class="review-stat-card__value" id="reviewHintsUsed">0</span>
+            <span class="review-stat-card__label">使用提示</span>
+          </div>
+          <div class="review-stat-card">
+            <span class="review-stat-card__icon">&#10060;</span>
+            <span class="review-stat-card__value" id="reviewWrongAttempts">0</span>
+            <span class="review-stat-card__label">答错次数</span>
+          </div>
+        </div>
+
+        <div class="review-page__sections">
+          <div class="review-section">
+            <h3 class="review-section__title">&#128270; 高频错误类型</h3>
+            <div class="review-section__body" id="reviewErrorTypes"></div>
+          </div>
+
+          <div class="review-section">
+            <h3 class="review-section__title">&#128203; 关卡明细</h3>
+            <div class="review-section__body" id="reviewLevelDetails"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ============ VALIDATE OVERLAY ============ -->
+    <div class="overlay hidden" id="validateOverlay">
+      <div class="modal modal--validate">
+        <button class="modal__close" id="closeValidateModal">&times;</button>
+        <h3 class="modal__title">&#9881; 内置关卡校验</h3>
+        <div class="validate-results" id="validateResults"></div>
+      </div>
+    </div>
 
     <!-- ============ GAME OVER OVERLAY ============ -->
     <div class="overlay hidden" id="gameOverOverlay">

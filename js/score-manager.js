@@ -15,6 +15,10 @@ class ScoreManager {
         this.lives = parsed.lives !== undefined ? parsed.lives : this.INITIAL_LIVES;
         this.completedLevels = parsed.completedLevels || [];
         this.hintsUsedForLevel = parsed.hintsUsedForLevel || {};
+        this.wrongAttempts = parsed.wrongAttempts || {};
+        this.errorTypesEncountered = parsed.errorTypesEncountered || {};
+        this.attemptsPerLevel = parsed.attemptsPerLevel || {};
+        this.livesLostPerLevel = parsed.livesLostPerLevel || {};
       } else {
         this.reset();
       }
@@ -28,7 +32,11 @@ class ScoreManager {
       score: this.score,
       lives: this.lives,
       completedLevels: this.completedLevels,
-      hintsUsedForLevel: this.hintsUsedForLevel
+      hintsUsedForLevel: this.hintsUsedForLevel,
+      wrongAttempts: this.wrongAttempts,
+      errorTypesEncountered: this.errorTypesEncountered,
+      attemptsPerLevel: this.attemptsPerLevel,
+      livesLostPerLevel: this.livesLostPerLevel
     };
     localStorage.setItem('syntax_game_progress', JSON.stringify(data));
   }
@@ -38,6 +46,10 @@ class ScoreManager {
     this.lives = this.INITIAL_LIVES;
     this.completedLevels = [];
     this.hintsUsedForLevel = {};
+    this.wrongAttempts = {};
+    this.errorTypesEncountered = {};
+    this.attemptsPerLevel = {};
+    this.livesLostPerLevel = {};
     this.save();
   }
 
@@ -73,6 +85,21 @@ class ScoreManager {
     return !!this.hintsUsedForLevel[levelId];
   }
 
+  recordAttempt(levelId) {
+    this.attemptsPerLevel[levelId] = (this.attemptsPerLevel[levelId] || 0) + 1;
+    this.save();
+  }
+
+  recordWrongAnswer(levelId, errorType) {
+    this.wrongAttempts[levelId] = (this.wrongAttempts[levelId] || 0) + 1;
+    if (errorType) {
+      this.errorTypesEncountered[errorType] = (this.errorTypesEncountered[errorType] || 0) + 1;
+    }
+    const prevLost = this.livesLostPerLevel[levelId] || 0;
+    this.livesLostPerLevel[levelId] = prevLost + 1;
+    this.save();
+  }
+
   loseLife() {
     this.lives = Math.max(0, this.lives - 1);
     this.save();
@@ -91,6 +118,68 @@ class ScoreManager {
       totalLevels: LEVELS.length,
       isGameOver: this.isGameOver()
     };
+  }
+
+  getReviewData() {
+    const errorTypeStats = [];
+    const entries = Object.entries(this.errorTypesEncountered);
+    entries.sort((a, b) => b[1] - a[1]);
+    for (const [type, count] of entries) {
+      errorTypeStats.push({ type, count });
+    }
+
+    let totalHintsUsed = 0;
+    let totalWrongAttempts = 0;
+    const levelDetails = [];
+
+    const allLevelIds = new Set([
+      ...Object.keys(this.attemptsPerLevel),
+      ...Object.keys(this.wrongAttempts),
+      ...this.completedLevels.map(String)
+    ]);
+
+    const allLevels = [...LEVELS];
+    for (const idStr of allLevelIds) {
+      const id = parseInt(idStr);
+      const level = allLevels.find(l => l.id === id);
+      const title = level ? level.title : ('\u5173\u5361 ' + id);
+      const language = level ? level.language : '';
+      const difficulty = level ? level.difficulty : 1;
+      const attempts = this.attemptsPerLevel[id] || 0;
+      const wrongs = this.wrongAttempts[id] || 0;
+      const hintUsed = this.wasHintUsed(id);
+      const livesLost = this.livesLostPerLevel[id] || 0;
+      const completed = this.isLevelCompleted(id);
+
+      if (hintUsed) totalHintsUsed++;
+      totalWrongAttempts += wrongs;
+
+      levelDetails.push({
+        id, title, language, difficulty,
+        attempts, wrongs, hintUsed, livesLost, completed
+      });
+    }
+
+    levelDetails.sort((a, b) => a.id - b.id);
+
+    return {
+      score: this.score,
+      lives: this.lives,
+      completedCount: this.completedLevels.length,
+      totalLevels: LEVELS.length,
+      totalHintsUsed,
+      totalWrongAttempts,
+      errorTypeStats,
+      levelDetails
+    };
+  }
+
+  resetReviewData() {
+    this.wrongAttempts = {};
+    this.errorTypesEncountered = {};
+    this.attemptsPerLevel = {};
+    this.livesLostPerLevel = {};
+    this.save();
   }
 }
 
