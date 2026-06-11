@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>语法结构 - 代码解谜游戏</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <div class="scanlines"></div>
+  <div class="noise"></div>
+
+  <div class="app-container">
+    <!-- ============ STATUS BAR ============ -->
+    <header class="status-bar">
+      <div class="status-bar__left">
+        <span class="status-bar__logo">{ }</span>
+        <span class="status-bar__title">语法结构</span>
+      </div>
+      <div class="status-bar__center">
+        <div class="score-display">
+          <span class="score-display__icon">&#9733;</span>
+          <span class="score-display__value" id="scoreValue">0</span>
+        </div>
+        <div class="lives-display" id="livesContainer">
+          <span class="heart heart--alive">&#9829;</span>
+          <span class="heart heart--alive">&#9829;</span>
+          <span class="heart heart--alive">&#9829;</span>
+        </div>
+      </div>
+      <div class="status-bar__right">
+        <button class="icon-btn" id="themeToggle" title="切换主题">&#9788;</button>
+      </div>
+    </header>
+
+    <!-- ============ LEVEL SELECT PAGE ============ -->
+    <main id="pageLevelSelect" class="page">
+      <div class="level-select">
+        <div class="level-select__header">
+          <h1 class="hero-title">
+            <span class="hero-title__bracket">&lt;</span>
+            代码诊断室
+            <span class="hero-title__bracket">/&gt;</span>
+          </h1>
+          <p class="hero-subtitle">每段代码都是一个"病人"，找出语法错误，开出正确的修复处方</p>
+          <div class="hero-stats">
+            <div class="hero-stats__item">
+              <span class="hero-stats__num" id="completedCount">0</span>
+              <span class="hero-stats__label">已通关</span>
+            </div>
+            <div class="hero-stats__divider"></div>
+            <div class="hero-stats__item">
+              <span class="hero-stats__num" id="totalLevelCount">10</span>
+              <span class="hero-stats__label">总关卡</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="level-grid" id="levelGrid">
+        </div>
+
+        <div class="level-select__footer">
+          <button class="btn btn--outline btn--glow" id="btnCustomLevel">
+            <span class="btn__icon">&#43;</span>
+            创建自定义关卡
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- ============ GAME BOARD PAGE ============ -->
+    <main id="pageGameBoard" class="page hidden">
+      <div class="game-board">
+        <div class="game-board__topbar">
+          <button class="btn btn--ghost" id="btnBackToMenu">
+            <span class="btn__icon">&#8592;</span> 返回关卡列表
+          </button>
+          <div class="game-board__level-info">
+            <h2 class="game-board__level-title" id="levelTitle">关卡加载中...</h2>
+            <div class="game-board__level-meta">
+              <span class="lang-tag" id="levelLanguage">Python</span>
+              <span class="difficulty-stars" id="levelDifficulty">&#9733;</span>
+            </div>
+          </div>
+          <button class="btn btn--ghost btn--knowledge" id="btnKnowledge">
+            <span class="btn__icon">&#128218;</span> 知识点
+          </button>
+        </div>
+
+        <div class="game-board__main">
+          <div class="panel panel--code">
+            <div class="panel__header">
+              <div class="panel__dots">
+                <span class="dot dot--red"></span>
+                <span class="dot dot--yellow"></span>
+                <span class="dot dot--green"></span>
+              </div>
+              <span class="panel__title">buggy_code.txt</span>
+            </div>
+            <div class="panel__body">
+              <div class="code-display" id="codeDisplay">
+              </div>
+            </div>
+          </div>
+
+          <div class="panel panel--options">
+            <div class="panel__header">
+              <span class="panel__title">选择修复方案</span>
+            </div>
+            <div class="panel__body">
+              <div class="options-container" id="optionsContainer">
+              </div>
+            </div>
+          </div>
+
+          <div class="panel panel--sandbox">
+            <div class="panel__header">
+              <span class="panel__title">&#9654; 代码沙盒</span>
+            </div>
+            <div class="panel__body">
+              <div class="sandbox-tabs">
+                <span class="sandbox-tab sandbox-tab--active">输出</span>
+                <span class="sandbox-tab sandbox-tab--error" id="sandboxErrorLabel">错误</span>
+              </div>
+              <div class="sandbox-output" id="sandboxOutput">
+                点击"运行"按钮查看代码执行结果...
+              </div>
+              <div class="sandbox-error" id="sandboxError"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-board__controls">
+          <button class="btn btn--outline" id="btnHint">
+            <span class="btn__icon">&#128161;</span> 提示
+          </button>
+          <button class="btn btn--primary btn--glow" id="btnRun">
+            <span class="btn__icon">&#9654;</span> 运行代码
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- ============ CUSTOM LEVEL PAGE ============ -->
+    <main id="pageCustomLevel" class="page hidden">
+      <div class="custom-level">
+        <div class="custom-level__header">
+          <button class="btn btn--ghost" id="btnBackFromCustom">
+            <span class="btn__icon">&#8592;</span> 返回
+          </button>
+          <h2 class="custom-level__title">创建自定义关卡</h2>
+        </div>
+
+        <div class="custom-level__form">
+          <div class="form-group">
+            <label class="form-label">关卡标题</label>
+            <input type="text" class="form-input" id="customTitle" placeholder="给关卡起个名字...">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">编程语言</label>
+            <select class="form-select" id="customLanguage">
+              <option value="python">Python</option>
+              <option value="javascript">JavaScript</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">含错误的代码（Buggy Code）</label>
+            <textarea class="form-textarea form-textarea--code" id="customBuggyCode" rows="6" placeholder="粘贴包含语法错误的代码..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">正确代码（Correct Code）</label>
+            <textarea class="form-textarea form-textarea--code" id="customCorrectCode" rows="6" placeholder="粘贴修复后的正确代码..."></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group form-group--half">
+              <label class="form-label">知识点</label>
+              <input type="text" class="form-input" id="customKnowledgePoint" placeholder="例如：变量声明">
+            </div>
+            <div class="form-group form-group--half">
+              <label class="form-label">错误类型</label>
+              <input type="text" class="form-input" id="customErrorType" placeholder="例如：变量未定义">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">期望输出（可选）</label>
+            <input type="text" class="form-input" id="customExpectedOutput" placeholder="正确代码运行的期望输出...">
+          </div>
+
+          <div class="custom-level__actions">
+            <button class="btn btn--outline" id="btnCancelCustom">取消</button>
+            <button class="btn btn--primary btn--glow" id="btnSubmitCustom">
+              <span class="btn__icon">&#10003;</span> 创建关卡
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ============ GAME OVER OVERLAY ============ -->
+    <div class="overlay hidden" id="gameOverOverlay">
+      <div class="modal modal--game-over">
+        <div class="modal__icon">&#9760;</div>
+        <h2 class="modal__title">游戏结束</h2>
+        <p class="modal__text">生命值耗尽，但你学到了宝贵的语法知识！</p>
+        <div class="modal__stats">
+          <div class="modal__stat">
+            <span class="modal__stat-value" id="gameOverScore">0</span>
+            <span class="modal__stat-label">总得分</span>
+          </div>
+          <div class="modal__stat">
+            <span class="modal__stat-value" id="gameOverLevels">0</span>
+            <span class="modal__stat-label">通关数</span>
+          </div>
+        </div>
+        <div class="modal__actions">
+          <button class="btn btn--primary btn--glow" id="gameOverRestart">重新开始</button>
+          <button class="btn btn--outline" id="gameOverMenu">返回列表</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ KNOWLEDGE CARD OVERLAY ============ -->
+    <div class="overlay hidden" id="knowledgeCardOverlay">
+      <div class="modal modal--knowledge">
+        <button class="modal__close" id="closeKnowledgeCard">&times;</button>
+        <div class="knowledge-card">
+          <div class="knowledge-card__icon">&#128218;</div>
+          <h3 class="knowledge-card__title" id="knowledgeTitle"></h3>
+          <p class="knowledge-card__summary" id="knowledgeSummary"></p>
+          <p class="knowledge-card__detail" id="knowledgeDetail"></p>
+          <div class="knowledge-card__examples">
+            <div class="knowledge-card__example knowledge-card__example--correct">
+              <div class="example-label">&#10004; 正确写法</div>
+              <pre class="example-code" id="knowledgeCorrectCode"></pre>
+            </div>
+            <div class="knowledge-card__example knowledge-card__example--wrong">
+              <div class="example-label">&#10008; 错误写法</div>
+              <pre class="example-code" id="knowledgeWrongCode"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/level-data.js"></script>
+  <script src="js/code-sandbox.js"></script>
+  <script src="js/score-manager.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
