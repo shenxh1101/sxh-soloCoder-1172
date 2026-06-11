@@ -67,6 +67,9 @@
             <span class="btn__icon">&#43;</span>
             创建自定义关卡
           </button>
+          <button class="btn btn--outline" id="btnWrongBook">
+            <span class="btn__icon">&#128450;</span> 错题本
+          </button>
           <button class="btn btn--outline" id="btnReviewPage">
             <span class="btn__icon">&#128202;</span> 进度复盘
           </button>
@@ -93,6 +96,9 @@
           </div>
           <button class="btn btn--ghost btn--knowledge" id="btnKnowledge">
             <span class="btn__icon">&#128218;</span> 知识点
+          </button>
+          <button class="btn btn--ghost btn--knowledge" id="btnPreviewKnowledge">
+            <span class="btn__icon">&#128214;</span> 预习
           </button>
         </div>
 
@@ -300,6 +306,21 @@
             <div class="review-section__body" id="reviewLevelDetails"></div>
           </div>
         </div>
+      </div>
+    </main>
+
+    <!-- ============ WRONG BOOK PAGE ============ -->
+    <main id="pageWrongBook" class="page hidden">
+      <div class="wrong-book">
+        <div class="wrong-book__header">
+          <button class="btn btn--ghost" id="btnBackFromWrongBook">
+            <span class="btn__icon">&#8592;</span> 返回关卡列表
+          </button>
+          <h2 class="wrong-book__title">&#128450; 错题本</h2>
+          <div class="wrong-book__placeholder"></div>
+        </div>
+
+        <div class="wrong-book__content" id="wrongBookContent"></div>
       </div>
     </main>
 

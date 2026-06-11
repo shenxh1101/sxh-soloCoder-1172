@@ -49,6 +49,10 @@ class App {
       this.navigateTo('review');
     });
 
+    document.getElementById('btnWrongBook').addEventListener('click', () => {
+      this.navigateTo('wrong-book');
+    });
+
     document.getElementById('btnValidateLevels').addEventListener('click', () => {
       this.validateLevels();
     });
@@ -66,6 +70,10 @@ class App {
     });
 
     document.getElementById('btnBackFromReview').addEventListener('click', () => {
+      this.navigateTo('level-select');
+    });
+
+    document.getElementById('btnBackFromWrongBook').addEventListener('click', () => {
       this.navigateTo('level-select');
     });
 
@@ -93,6 +101,10 @@ class App {
       if (e.target === e.currentTarget) {
         document.getElementById('knowledgeCardOverlay').classList.add('hidden');
       }
+    });
+
+    document.getElementById('btnPreviewKnowledge').addEventListener('click', () => {
+      this.showKnowledgeCardForCurrentLevel();
     });
 
     document.getElementById('closeValidateModal').addEventListener('click', () => {
@@ -153,6 +165,9 @@ class App {
       case 'review':
         document.getElementById('pageReview').classList.remove('hidden');
         break;
+      case 'wrong-book':
+        document.getElementById('pageWrongBook').classList.remove('hidden');
+        break;
     }
     this.renderCurrentPage(data);
   }
@@ -170,6 +185,9 @@ class App {
         break;
       case 'review':
         this.renderReviewPage();
+        break;
+      case 'wrong-book':
+        this.renderWrongBook();
         break;
     }
   }
@@ -256,6 +274,7 @@ class App {
     this.renderSandbox();
 
     document.getElementById('btnKnowledge').style.display = 'inline-flex';
+    document.getElementById('btnPreviewKnowledge').style.display = 'inline-flex';
 
     this.updateGameControls();
     this.updateStatusBar();
@@ -402,26 +421,35 @@ class App {
     const selectedCode = level.options[this.selectedOptionIndex];
     const result = sandbox.run(selectedCode, level.language);
 
-    if (this.selectedOptionIndex === level.correctIndex) {
+    const isOptionCorrect = this.selectedOptionIndex === level.correctIndex;
+    const isOutputCorrect = result.success && result.output === level.expectedOutput;
+
+    if (isOptionCorrect && isOutputCorrect) {
       this.showSandboxOutput(result.success ? result.output : selectedCode, true);
       this.onLevelComplete();
       return;
     }
 
-    if (result.success) {
-      if (result.output === level.expectedOutput) {
-        const msg = `\u8F93\u51FA\u6B63\u786E\uFF0C\u4F46\u8FD9\u4E0D\u662F\u76EE\u6807\u4FEE\u590D\u65B9\u6848\u3002\n\u8BF7\u9009\u62E9\u80FD\u4ECE\u6839\u672C\u4E0A\u89E3\u51B3\u8BED\u6CD5\u9519\u8BEF\u7684\u9009\u9879\u3002`;
-        this.showSandboxError(msg);
-        this.onWrongAnswer();
-      } else {
-        const msg = `\u6267\u884C\u6210\u529F\uFF0C\u4F46\u8F93\u51FA\u4E0D\u6B63\u786E\u3002\n\u671F\u671B\u8F93\u51FA\uFF1A${level.expectedOutput}\n\u5B9E\u9645\u8F93\u51FA\uFF1A${result.output}`;
-        this.showSandboxError(msg);
-        this.onWrongAnswer();
-      }
+    scoreManager.recordWrongAnswerDetail(
+      level.id,
+      this.selectedOptionIndex,
+      selectedCode,
+      level
+    );
+
+    let msg = '';
+    if (isOptionCorrect && !isOutputCorrect) {
+      msg = `\u9009\u62E9\u4E86\u6B63\u786E\u65B9\u6848\uff0c\u4F46\u8FD0\u884C\u8F93\u51FA\u4E0D\u5339\u914D\u3002\n\u671F\u671B\u8F93\u51FA\uFF1A${level.expectedOutput}\n\u5B9E\u9645\u8F93\u51FA\uFF1A${result.success ? result.output : ('\u9519\u8BEF: ' + result.error)}`;
+    } else if (!isOptionCorrect && isOutputCorrect) {
+      msg = `\u8F93\u51FA\u5DE7\u5DE7\u6B63\u786E\uFF0C\u4F46\u8FD9\u4E0D\u662F\u76EE\u6807\u4FEE\u590D\u65B9\u6848\u3002\n\u9898\u76EE\u8981\u6C42\u4FEE\u590D\u5B83\u662F\u5173\u952E\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9\u3002`;
+    } else if (result.success) {
+      msg = `\u6267\u884C\u6210\u529F\uFF0C\u4F46\u8F93\u51FA\u4E0D\u6B63\u786E\u3002\n\u671F\u671B\u8F93\u51FA\uFF1A${level.expectedOutput}\n\u5B9E\u9645\u8F93\u51FA\uFF1A${result.output}`;
     } else {
-      this.showSandboxError(`\u6267\u884C\u9519\u8BEF\uFF1A${result.error}`);
-      this.onWrongAnswer();
+      msg = `\u6267\u884C\u9519\u8BEF\uFF1A${result.error}`;
     }
+
+    this.showSandboxError(msg);
+    this.onWrongAnswer();
   }
 
   showSandboxOutput(output, isCorrect) {
@@ -491,6 +519,15 @@ class App {
 
   showKnowledgeCard() {
     const level = this.currentLevel;
+    this.openKnowledgeCard(level);
+  }
+
+  showKnowledgeCardForCurrentLevel() {
+    if (!this.currentLevel) return;
+    this.openKnowledgeCard(this.currentLevel);
+  }
+
+  openKnowledgeCard(level) {
     const knowledge = this.getKnowledgeData(level);
     if (!knowledge) return;
 
@@ -712,14 +749,20 @@ class App {
     } else {
       levelHtml = '<div class="review-table-wrap"><table class="review-table">';
       levelHtml += '<thead><tr>';
-      levelHtml += '<th>\u5173\u5361</th><th>\u8BED\u8A00</th><th>\u96BE\u5EA6</th><th>\u5C1D\u8BD5\u6B21\u6570</th><th>\u7B54\u9519\u6B21\u6570</th><th>\u63D0\u793A</th><th>\u751F\u547D\u6D88\u8017</th><th>\u72B6\u6001</th>';
+      levelHtml += '<th>\u5173\u5361</th><th>\u8BED\u8A00</th><th>\u96BE\u5EA6</th><th>\u5C1D\u8BD5\u6B21\u6570</th><th>\u7B54\u9519\u6B21\u6570</th><th>\u63D0\u793A</th><th>\u751F\u547D\u6D88\u8017</th><th>\u72B6\u6001</th><th>\u64CD\u4F5C</th>';
       levelHtml += '</tr></thead><tbody>';
 
+      const allLevels = [...LEVELS, ...this.customLevels];
       for (const d of data.levelDetails) {
         const langLabel = d.language === 'python' ? 'Python' : 'JavaScript';
         const hintIcon = d.hintUsed ? '\uD83D\uDCA1' : '-';
         const statusIcon = d.completed ? '\u2705' : '\u274C';
         const wrongClass = d.wrongs > 0 ? 'review-table__cell--warn' : '';
+        const level = allLevels.find(l => l.id === d.id);
+        const hasKnowledge = level && (level.inlineKnowledge || level.knowledgeId);
+        const knowledgeBtn = hasKnowledge
+          ? `<button class="btn btn--sm btn--ghost review-knowledge-btn" data-level-id="${d.id}">\u77E5\u8BC6\u70B9</button>`
+          : '';
         levelHtml += `
           <tr>
             <td>${this.escapeHtml(d.title)}</td>
@@ -730,12 +773,125 @@ class App {
             <td>${hintIcon}</td>
             <td>${d.livesLost}</td>
             <td>${statusIcon}</td>
+            <td>${knowledgeBtn}</td>
           </tr>
         `;
       }
       levelHtml += '</tbody></table></div>';
     }
     document.getElementById('reviewLevelDetails').innerHTML = levelHtml;
+
+    document.querySelectorAll('.review-knowledge-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const levelId = parseInt(btn.dataset.levelId);
+        const allLevels = [...LEVELS, ...this.customLevels];
+        const level = allLevels.find(l => l.id === levelId);
+        if (level) {
+          this.openKnowledgeCard(level);
+        }
+      });
+    });
+
+    this.updateStatusBar();
+  }
+
+  renderWrongBook() {
+    const data = scoreManager.getWrongBookData();
+    const container = document.getElementById('wrongBookContent');
+
+    if (data.length === 0) {
+      container.innerHTML = '<div class="review-empty">\u6682\u65E0\u9519\u9898\u8BB0\u5F55\uFF0C\u7EE7\u7EED\u52A0\u6CB9\uFF01</div>';
+      this.updateStatusBar();
+      return;
+    }
+
+    let html = '';
+    for (const entry of data) {
+      const langLabel = entry.language === 'python' ? 'Python' : 'JavaScript';
+      const labels = ['A', 'B', 'C', 'D'];
+
+      let wrongOptionsHtml = '';
+      const seen = new Set();
+      for (const detail of entry.allWrongDetails) {
+        const key = detail.optionIndex;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        wrongOptionsHtml += `
+          <div class="wrong-option-item">
+            <span class="wrong-option-item__label">${labels[detail.optionIndex]}</span>
+            <pre class="wrong-option-item__code">${this.escapeHtml(detail.optionCode)}</pre>
+          </div>
+        `;
+      }
+
+      const hasKnowledge = entry.knowledgeId || entry.inlineKnowledge;
+
+      html += `
+        <div class="wrong-book-card">
+          <div class="wrong-book-card__header">
+            <div class="wrong-book-card__info">
+              <span class="wrong-book-card__title">${this.escapeHtml(entry.title)}</span>
+              <span class="wrong-book-card__meta">
+                <span class="lang-tag">${langLabel}</span>
+                <span>${this.renderStars(entry.difficulty)}</span>
+                <span>\u7B54\u9519 ${entry.wrongCount} \u6B21</span>
+              </span>
+            </div>
+            <div class="wrong-book-card__actions">
+              <button class="btn btn--outline btn--sm wrong-book-card__redo-btn" data-level-id="${entry.levelId}">\u91CD\u505A\u6B64\u5173</button>
+            </div>
+          </div>
+
+          <div class="wrong-book-card__body">
+            <div class="wrong-book-card__section">
+              <span class="wrong-book-card__section-label">\u9519\u8BEF\u7C7B\u578B\uFF1A</span>
+              <span>${this.escapeHtml(entry.errorType)}</span>
+            </div>
+
+            <div class="wrong-book-card__section">
+              <span class="wrong-book-card__section-label">\u4F60\u9009\u62E9\u7684\u9519\u8BEF\u65B9\u6848\uFF1A</span>
+              <div class="wrong-options-list">${wrongOptionsHtml}</div>
+            </div>
+
+            <div class="wrong-book-card__section">
+              <span class="wrong-book-card__section-label">\u6B63\u786E\u4FEE\u590D\u601D\u8DEF\uFF1A</span>
+              <pre class="wrong-book-card__correct-code">${this.escapeHtml(entry.correctOptionCode)}</pre>
+            </div>
+          </div>
+
+          ${hasKnowledge ? `
+          <div class="wrong-book-card__footer">
+            <button class="btn btn--ghost btn--sm wrong-book-card__knowledge-btn" data-level-id="${entry.levelId}">
+              \uD83D\uDCDA \u67E5\u770B\u77E5\u8BC6\u70B9
+            </button>
+          </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    container.innerHTML = html;
+
+    container.querySelectorAll('.wrong-book-card__redo-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const levelId = parseInt(btn.dataset.levelId);
+        this.startLevel(levelId);
+      });
+    });
+
+    container.querySelectorAll('.wrong-book-card__knowledge-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const levelId = parseInt(btn.dataset.levelId);
+        const allLevels = [...LEVELS, ...this.customLevels];
+        const level = allLevels.find(l => l.id === levelId);
+        if (level) {
+          this.openKnowledgeCard(level);
+        }
+      });
+    });
 
     this.updateStatusBar();
   }

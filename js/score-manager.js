@@ -19,6 +19,7 @@ class ScoreManager {
         this.errorTypesEncountered = parsed.errorTypesEncountered || {};
         this.attemptsPerLevel = parsed.attemptsPerLevel || {};
         this.livesLostPerLevel = parsed.livesLostPerLevel || {};
+        this.wrongRecords = parsed.wrongRecords || {};
       } else {
         this.reset();
       }
@@ -36,7 +37,8 @@ class ScoreManager {
       wrongAttempts: this.wrongAttempts,
       errorTypesEncountered: this.errorTypesEncountered,
       attemptsPerLevel: this.attemptsPerLevel,
-      livesLostPerLevel: this.livesLostPerLevel
+      livesLostPerLevel: this.livesLostPerLevel,
+      wrongRecords: this.wrongRecords
     };
     localStorage.setItem('syntax_game_progress', JSON.stringify(data));
   }
@@ -50,6 +52,7 @@ class ScoreManager {
     this.errorTypesEncountered = {};
     this.attemptsPerLevel = {};
     this.livesLostPerLevel = {};
+    this.wrongRecords = {};
     this.save();
   }
 
@@ -98,6 +101,69 @@ class ScoreManager {
     const prevLost = this.livesLostPerLevel[levelId] || 0;
     this.livesLostPerLevel[levelId] = prevLost + 1;
     this.save();
+  }
+
+  recordWrongAnswerDetail(levelId, wrongOptionIndex, wrongOptionCode, levelSnapshot) {
+    if (!this.wrongRecords[levelId]) {
+      this.wrongRecords[levelId] = [];
+    }
+    this.wrongRecords[levelId].push({
+      wrongOptionIndex: wrongOptionIndex,
+      wrongOptionCode: wrongOptionCode,
+      levelSnapshot: {
+        id: levelId,
+        title: levelSnapshot.title,
+        language: levelSnapshot.language,
+        difficulty: levelSnapshot.difficulty,
+        knowledgePoint: levelSnapshot.knowledgePoint,
+        knowledgeId: levelSnapshot.knowledgeId,
+        errorType: levelSnapshot.errorType,
+        correctOptionCode: levelSnapshot.options[levelSnapshot.correctIndex],
+        inlineKnowledge: levelSnapshot.inlineKnowledge || null
+      },
+      timestamp: Date.now()
+    });
+    this.save();
+  }
+
+  getWrongBookData() {
+    const entries = [];
+    const allLevels = [...LEVELS];
+    const levelIds = Object.keys(this.wrongRecords).map(Number);
+
+    for (const id of levelIds) {
+      const records = this.wrongRecords[id];
+      if (!records || records.length === 0) continue;
+
+      const latest = records[records.length - 1];
+      const snap = latest.levelSnapshot;
+      const wrongCount = records.length;
+      const uniqueWrongOptions = [...new Set(records.map(r => r.wrongOptionIndex))];
+
+      const allWrongDetails = records.map(r => ({
+        optionIndex: r.wrongOptionIndex,
+        optionCode: r.wrongOptionCode
+      }));
+
+      entries.push({
+        levelId: id,
+        title: snap.title,
+        language: snap.language,
+        difficulty: snap.difficulty,
+        knowledgePoint: snap.knowledgePoint,
+        knowledgeId: snap.knowledgeId,
+        errorType: snap.errorType,
+        correctOptionCode: snap.correctOptionCode,
+        inlineKnowledge: snap.inlineKnowledge,
+        wrongCount,
+        uniqueWrongOptions,
+        allWrongDetails,
+        lastWrongTime: latest.timestamp
+      });
+    }
+
+    entries.sort((a, b) => b.lastWrongTime - a.lastWrongTime);
+    return entries;
   }
 
   loseLife() {
@@ -179,6 +245,8 @@ class ScoreManager {
     this.errorTypesEncountered = {};
     this.attemptsPerLevel = {};
     this.livesLostPerLevel = {};
+    this.hintsUsedForLevel = {};
+    this.wrongRecords = {};
     this.save();
   }
 }
